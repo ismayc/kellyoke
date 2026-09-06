@@ -15,7 +15,7 @@ import html
 import json
 import os
 
-from design_tokens import SEASON_COLOR, FONTS, TOKENS, nav, nav_css, nav_js
+from design_tokens import SEASON_COLOR, FONTS, TOKENS, favicon, nav, nav_css, nav_js
 
 S = os.path.dirname(os.path.abspath(__file__))
 REPO = "/Users/chesterismay/repos/kellyoke"
@@ -101,6 +101,7 @@ for s, parts in sorted(pl["seasons"].items(), key=lambda kv: int(kv[0])):
 
 HTML = f"""<meta charset="utf-8">
 <title>Kellyoke Playlists</title>
+{favicon()}
 <meta name="description" content="Every Kellyoke as an instant YouTube playlist, by season or the whole run end to end.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="The Kellyoke Archive">

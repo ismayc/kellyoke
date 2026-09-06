@@ -5,7 +5,7 @@ Design: the karaoke monitor. Rows are ruled lines, not cards; the only ornament
 is the sung/unsung fill, and it always stands for a proportion.
 """
 import json, os, re, html, unicodedata, collections
-from design_tokens import SEASON_COLOR, FONTS, TOKENS, nav, nav_css, nav_js
+from design_tokens import SEASON_COLOR, FONTS, TOKENS, favicon, nav, nav_css, nav_js
 
 S = os.path.dirname(os.path.abspath(__file__))
 REPO = "/Users/chesterismay/repos/kellyoke"
@@ -176,6 +176,7 @@ TOKENS_CSS = TOKENS.replace("{{", "{").replace("}}", "}")
 
 HTML = f"""<meta charset="utf-8">
 <title>The Kellyoke Archive</title>
+{favicon()}
 <meta name="description" content="Every song Kelly Clarkson opened The Kelly Clarkson Show with, from the 2019 premiere to the 2026 finale, in air-date order and linked to the best surviving copy.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="The Kellyoke Archive">

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the Kellyoke Data Explorer: faceted table + charts over the dataset."""
 import json, os, collections
-from design_tokens import SEASON_COLOR, FONTS, TOKENS, nav, nav_css, nav_js
+from design_tokens import SEASON_COLOR, FONTS, TOKENS, favicon, nav, nav_css, nav_js
 
 S = os.path.dirname(os.path.abspath(__file__))
 REPO = "/Users/chesterismay/repos/kellyoke"
@@ -47,6 +47,7 @@ SC_JSON = json.dumps(SEASON_COLOR)
 
 HTML = """<meta charset="utf-8">
 <title>Kellyoke Data Explorer</title>
+__FAVICON__
 <meta name="description" content="Filter, sort and chart every Kellyoke performance by season, genre, decade and performer.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="The Kellyoke Archive">
@@ -743,6 +744,7 @@ HTML = (HTML.replace("__DATA__", DATA)
             .replace("__GENRES__", GENRES_JSON)
             .replace("__DECADES__", DECADES_JSON)
             .replace("__NAV__", nav("explore.html"))
+    .replace("__FAVICON__", favicon())
             .replace("__NAVJS__", nav_js())
             .replace("__FONTS__", FONTS)
             .replace("__TOKENS__", TOKENS.replace("{{","{").replace("}}","}")

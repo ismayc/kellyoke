@@ -135,3 +135,31 @@ def nav_js():
     }
   }
 """ % json.dumps(ARTIFACT))
+
+
+# The mic from the share card, cut down to what survives at 16 pixels: a round
+# grille, a tapered handle, and the sung-pink band. The card's mesh, highlight
+# and stroke all disappear at this size, so drawing them just muddies the
+# silhouette. The dark rounded ground is fixed rather than theme-aware, because
+# a favicon gets no media query and has to sit legibly on a light or a dark tab
+# strip; a near-white mic on deep navy does, with the band as the one accent.
+FAVICON_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+    '<rect width="32" height="32" rx="7" fill="#081B2D"/>'
+    '<circle cx="16" cy="11.5" r="7.6" fill="#D8E6F2"/>'
+    '<path d="M11.4 19.2h9.2l-.9 8.1a3 3 0 0 1-3 2.7h-1.5a3 3 0 0 1-3-2.7z"'
+    ' fill="#D8E6F2"/>'
+    '<rect x="10.2" y="17.3" width="11.6" height="3.6" rx="1.5" fill="#E84691"/>'
+    '</svg>')
+
+
+def favicon():
+    """One inline data-URI icon, so there is no extra file to deploy.
+
+    netlify.toml copies a fixed list of files into _site, so a favicon.ico
+    would have to be added there too and would be a silent 404 until someone
+    noticed. Inlining it keeps the icon in the same place as the page.
+    """
+    import urllib.parse
+    return ('<link rel="icon" href="data:image/svg+xml,'
+            + urllib.parse.quote(FAVICON_SVG, safe="") + '">')
