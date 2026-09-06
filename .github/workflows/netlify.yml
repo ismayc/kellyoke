@@ -1,0 +1,82 @@
+name: deploy
+
+# Publishes the two pages to kellyokes.netlify.app.
+#
+# The repo is private, so GitHub Pages would need a paid plan. Netlify serves a
+# private repo on the free tier. Building here rather than using Netlify's Git
+# integration means Netlify never needs read access to the repo; it only receives
+# the finished _site directory.
+#
+# Needs two repository secrets:
+#   NETLIFY_AUTH_TOKEN  a personal access token from Netlify user settings
+#   NETLIFY_SITE_ID     the site's API ID from Site configuration
+# Without them the job explains what is missing instead of failing obscurely.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "explore.html"
+      - "performances.csv"
+      - "PLAYLISTS.md"
+      - "netlify.toml"
+      - ".github/workflows/netlify.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Never publish data that fails its own invariants.
+      - name: Check data invariants
+        run: python tools/check_data.py
+
+      - name: Confirm the deploy secrets exist
+        id: secrets
+        env:
+          TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          SITE: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$SITE" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::NETLIFY_AUTH_TOKEN or NETLIFY_SITE_ID is not set. \
+          Built the site but skipped the upload. Add both under \
+          Settings > Secrets and variables > Actions."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          cp index.html explore.html performances.csv PLAYLISTS.md _site/
+          ls -la _site
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: _site
+
+      - name: Deploy to Netlify
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          npx --yes netlify-cli@17 deploy \
+            --dir=_site \
+            --prod \
+            --message "${GITHUB_SHA::7} ${GITHUB_REF_NAME}"

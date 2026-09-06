@@ -92,6 +92,13 @@ the thing they forbid actually happened once and nothing noticed:
 mid-sentence punctuation, while still allowing it to separate a list item from
 its gloss.
 
+Both pages deploy to [kellyokes.netlify.app](https://kellyokes.netlify.app) on
+every push that touches them, and the deploy runs the data checks first so a
+failing dataset never reaches the site. The repo is private, and GitHub Pages
+requires a paid plan for private repos, which is why this goes through Netlify.
+CI builds the site and uploads the finished directory, so Netlify never needs
+read access to the repo.
+
 `tools/check_links.py` runs monthly. It asks YouTube's oEmbed endpoint whether
 each video still resolves and opens an issue listing any that have gone. Only a
 clean 404, 403 or 401 counts as dead; a timeout or a rate-limit says something

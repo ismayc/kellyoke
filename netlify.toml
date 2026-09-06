@@ -1,0 +1,46 @@
+# Netlify config for kellyokes.netlify.app
+#
+# The repo is private, and GitHub Pages needs a paid plan for private repos,
+# so deployment goes through Netlify instead.
+#
+# This file covers both routes:
+#   - Netlify's own Git integration, which runs [build] on each push
+#   - .github/workflows/netlify.yml, which builds in CI and uploads the result
+# The Actions route is the one in use, so [build] here is a fallback that keeps
+# the two paths producing the same site.
+
+[build]
+  publish = "_site"
+  command = """
+    python3 tools/check_data.py && \
+    mkdir -p _site && \
+    cp index.html explore.html performances.csv PLAYLISTS.md _site/
+  """
+
+[build.environment]
+  PYTHON_VERSION = "3.12"
+
+# The pages are regenerated wholesale, so a stale copy is worse than a refetch.
+# The CSV is a download, and can be cached harder.
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/performances.csv"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+    Content-Type = "text/csv; charset=utf-8"
+
+[[redirects]]
+  from = "/explore"
+  to = "/explore.html"
+  status = 301
+
+[[redirects]]
+  from = "/data"
+  to = "/performances.csv"
+  status = 301
