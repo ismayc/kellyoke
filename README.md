@@ -10,8 +10,8 @@ links are confirmed** against the air date stated in the clip's own YouTube
 description rather than inferred from its title.
 
 The songs she reached for span **1930 to 2025** across **17 genre families**:
-360 pop, 300 rock, 201 country, 166 R&B and soul, and a long tail down to a
-single Latin track.
+368 pop, 300 rock, 202 country, 166 R&B and soul, and a long tail down to
+three Latin tracks.
 
 ## Files
 
@@ -58,7 +58,7 @@ single Latin track.
   guest turn is linked only to a clip that shows the guest; where the sole
   surviving clip of that song is Kelly singing it on another night, the guest
   turn is left unlinked rather than pointed at the wrong performer.
-- 75 of 1,245 entries have no genre, mostly newer or independent artists with
+- 60 of 1,245 entries have no genre, mostly newer or independent artists with
   no Wikipedia infobox, plus medleys and traditional songs with no single
   artist. They show as "Not listed" rather than being guessed.
 - Where a song came back on a later morning and only one clip survives, every

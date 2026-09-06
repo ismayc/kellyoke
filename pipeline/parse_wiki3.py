@@ -89,6 +89,11 @@ def split_songs(aux, summary=""):
         src = summary
     if '"' in src and not re.search(r'"[^"]+"', src):
         src = '"' + src.lstrip('"')
+    # An editor occasionally quotes a title that is already quoted and carries a
+    # disambiguator: ""You Don't Know Me" (Cindy Walker song)" by Jann Arden.
+    # The outer pair pushes the "by" clause out of reach of the title match, so
+    # the song parses but the artist is silently lost. Unwrap it first.
+    src = re.sub(r'""([^"]+)"\s*\([^)]*\)"', r'"\1"', src)
     pairs = []
     for m in re.finditer(r'"([^"]+)"(\s*by\s+([^/,"]+))?', src):
         title = m.group(1).strip()
@@ -98,6 +103,15 @@ def split_songs(aux, summary=""):
         artist = (m.group(3) or "").strip().rstrip(".;,")
         artist = re.sub(r"\s*\(.*?\)\s*$", "", artist).strip()
         pairs.append((title, artist))
+    # "Beg" and "Put It On" by Q Parker: one credit covering both titles. Only
+    # propagate when the titles are joined by "and" and exactly one credit was
+    # found, on the last of them. A comma-separated list, or more than one
+    # credit, means the wiki was naming them separately and guessing would be
+    # worse than leaving a blank.
+    if (len(pairs) > 1 and re.search(r'"\s+and\s+"', src)
+            and sum(1 for _, a in pairs if a) == 1 and pairs[-1][1]):
+        shared = pairs[-1][1]
+        pairs = [(t, a or shared) for t, a in pairs]
     return pairs
 
 

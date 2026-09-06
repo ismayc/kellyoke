@@ -62,6 +62,36 @@ song_by_disp = {k: v for k, v in links["song_links"].items()}
 art_by_disp = {k: v for k, v in links["artist_links"].items()}
 
 
+# Songs the wiki listed with no artist to look up, identified from the clip
+# title, which names the source where the wiki text did not. These supply genre
+# *strings*, not families, so the FAMILY rules below classify them the same way
+# they classify everything fetched from Wikipedia. Nothing here is a guess from
+# the title alone; each one is what the clip says it is.
+HAND_GENRE = {
+    # "Kellyoke | If I Only Had a Brain (Wizard of Oz)"
+    "If I Only Had a Brain": ["show tune"],
+    # "Kellyoke | Sisters (From White Christmas)"
+    "Sisters": ["show tune"],
+    # "'Hopeless War' from 'The Outsiders'", a Broadway musical
+    "Hopeless War": ["show tune"],
+    # "'Golden' from Kpop Demon Hunters"
+    "Golden": ["K-pop", "dance-pop"],
+    # "Kellyoke | I Would've Loved You (Jake Hoot & Kelly Clarkson)", Hoot being
+    # a country artist and the song a country duet
+    "I Would Have Loved You": ["country"],
+    # "Kellyoke | Just Sing", the Trolls World Tour ensemble single
+    "Just Sing": ["pop"],
+    # Kelly's own catalog. The wiki omits the artist on her own songs, so these
+    # look artist-less rather than unknown; the clip titles confirm each one.
+    "Dance With Me": ["pop"],
+    "Favorite Kind of High": ["pop"],
+    "People Like Us": ["pop"],
+    "Sober": ["pop"],
+    "Piece by Piece": ["pop"],
+    "I'd Be Lyin'": ["pop"],
+}
+
+
 def artist_candidates(artist):
     """The credit as written, then the ways it might name a real article.
 
@@ -134,6 +164,10 @@ for r in rows:
                     if genres:
                         src = "artist"
                         break
+        if not genres:
+            genres = HAND_GENRE.get(p["song"], [])
+            if genres:
+                src = "hand"
         fam = family(genres[0]) if genres else ""
         if not fam:
             for g in genres[1:]:
