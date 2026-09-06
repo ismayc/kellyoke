@@ -130,9 +130,15 @@ python3 tools/archive_videos.py --out ~/kellyoke-archive
 ```
 
 It needs `ffmpeg`, because YouTube serves these clips as separate video and
-audio streams with no pre-muxed format, and `yt-dlp`. Roughly 21 GB at the
-default 720p, about 8 GB at `--height 360`, or about 2 GB with `--audio-only`,
-which needs no muxer. Nothing it writes belongs in the repo.
+audio streams with no pre-muxed format, and `yt-dlp`. Measured against a sample
+run, the 38.9 hours of footage come to roughly **38 GB** at the default 720p,
+about **11 GB** at `--height 360`, or about **2 GB** with `--audio-only`, which
+needs no muxer. Nothing it writes belongs in the repo.
+
+H.264 is preferred over the AV1 and VP9 streams YouTube also offers. Those are
+smaller at the same height, but this is a copy meant to outlive the uploads and
+H.264 in mp4 is the one combination any player will open. `--any-codec` takes
+the smaller files instead.
 
 ## Design
 

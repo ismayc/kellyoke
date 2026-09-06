@@ -44,8 +44,18 @@ CSV = ROOT / "performances.csv"
 
 # 720p is the practical default: most of these are fan re-uploads of broadcast
 # video, so 1080p is usually an upscale of the same source at twice the bytes.
-def video_format(height):
-    return (f"bestvideo[height<=?{height}][ext=mp4]+bestaudio[ext=m4a]/"
+def video_format(height, codec="avc1"):
+    """H.264 first, by default.
+
+    YouTube also serves AV1 and VP9, which are smaller for the same height. For
+    an archive meant to outlive the uploads, playability matters more than the
+    saving: H.264 in mp4 is the one combination every player made in the last
+    twenty years can open. The chain falls through to any codec rather than
+    failing, so a clip offered only as AV1 is still fetched.
+    """
+    pref = f"[vcodec^={codec}]" if codec else ""
+    return (f"bestvideo[height<=?{height}]{pref}+bestaudio[ext=m4a]/"
+            f"bestvideo[height<=?{height}][ext=mp4]+bestaudio[ext=m4a]/"
             f"bestvideo[height<=?{height}]+bestaudio/best[height<=?{height}]/best")
 
 
@@ -115,6 +125,8 @@ def main():
                     help="m4a instead of video; no muxing, so ffmpeg is optional")
     ap.add_argument("--height", type=int, default=720,
                     help="max video height; 360 roughly thirds the total (default: 720)")
+    ap.add_argument("--any-codec", action="store_true",
+                    help="allow AV1/VP9, which are smaller but need a modern player")
     ap.add_argument("--yt-dlp", help="path to yt-dlp if it is not on PATH")
     ap.add_argument("--js-runtime", default="node",
                     help="JS runtime for YouTube extraction (default: node)")
@@ -170,7 +182,8 @@ def main():
                "--sleep-requests", str(args.sleep),
                "-o", str(media / (t["stem"] + ".%(ext)s")),
                "-f", ("bestaudio[ext=m4a]/bestaudio" if args.audio_only
-                      else video_format(args.height)),
+                      else video_format(args.height,
+                                        "" if args.any_codec else "avc1")),
                url]
         print(f"[{i}/{len(todo)}] {t['air_date']}  {t['song'][:44]}")
         r = subprocess.run(cmd, capture_output=True, text=True)
