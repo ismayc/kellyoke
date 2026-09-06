@@ -36,7 +36,9 @@ OV = {
     # norm() strips parentheses, so the wiki's "Day-O (The Banana Boat Song)"
     # became "day o" and the clip's "Banana Boat (Day-O)" became "banana boat",
     # scoring 0.375 against a 0.86 threshold. The clip was in the pool the whole
-    # time. See docs/findings/kellyoke-alternate-titles.md.
+    # time. Fix an alternate title with an override here, never by loosening
+    # norm(): a lower threshold buys this one song at the cost of false matches
+    # across the other thousand.
     ("2024-10-31", "Day-O (The Banana Boat Song)"):
         ("h6gxn1gc91A", "KC Videos archive", ""),
     ("2024-12-03", "All the Stars"):            ("JNZ4tomXpOY", "Xavier Del Cid archive", ""),
