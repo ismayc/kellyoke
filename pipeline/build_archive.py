@@ -306,9 +306,8 @@ HTML = f"""<meta charset="utf-8">
   <header class="hero">
     <h1><span class="wipe">Every song she<br>opened with</span></h1>
     <p class="sub">For seven years <i>The Kelly Clarkson Show</i> opened with a song, sung live
-      with the house band. <b>Kelly</b> took {eps_kelly:,} of those mornings; a guest took
-      {eps_guest}. This is all <b>{n_kelly:,}</b> of hers, in the order they aired, each one
-      linked to the best copy still online.</p>
+      with the house band. This is all <b>{n_kelly:,}</b> <b>Kelly</b> sang, in the order they
+      aired, each one linked to the best copy still online. A guest sang {n_guest} more.</p>
     <div class="bookends">
       <div class="bookend">
         <span>It began</span>
@@ -375,6 +374,9 @@ HTML = f"""<meta charset="utf-8">
             mornings when someone else took the opening number. It was rare until the end, one
             morning in season 4 and none before it, then 20 in season 6 and 46 in season 7.
             Hide them with the button above.</li>
+          <li><b>Songs outnumber mornings.</b> Kelly opened {eps_kelly:,} shows but sang
+            {n_kelly:,} songs, because three mornings carried more than one: the two medleys and
+            the seven-song series finale.</li>
           <li><b>Her own song</b> marks the {n_classic} times she sang from her own catalog.</li>
           <li><b>with &hellip;</b> means she sang it as a duet.</li>
           <li>A note like <i>Reba McEntire version</i> means she sang that arrangement rather
