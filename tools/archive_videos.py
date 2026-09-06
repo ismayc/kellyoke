@@ -36,6 +36,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -135,6 +136,14 @@ def main():
     ap.add_argument("--pause", default="4-12", metavar="MIN-MAX",
                     help="randomized seconds between downloads (default: 4-12). "
                          "This is the knob the rate limit responds to")
+    ap.add_argument("--until-done", action="store_true",
+                    help="keep going in rounds, sleeping between them, until "
+                         "nothing is outstanding")
+    ap.add_argument("--retry-wait", type=float, default=10800,
+                    help="seconds to wait between rounds (default: 3 hours)")
+    ap.add_argument("--give-up-after", type=int, default=3,
+                    help="stop after this many rounds that download nothing "
+                         "(default: 3)")
     ap.add_argument("--dry-run", action="store_true",
                     help="report what would be fetched and exit")
     args = ap.parse_args()
@@ -163,30 +172,25 @@ def main():
     media.mkdir(parents=True, exist_ok=True)
     done_file = out / "downloaded.txt"
 
-    already = set()
-    if done_file.exists():
-        already = {ln.split()[-1] for ln in done_file.read_text().splitlines() if ln.strip()}
-    todo = [t for t in targets if t["video_id"] not in already]
-    remaining = len(todo)
-    # --limit counts what is still outstanding, not what exists. Slicing the
-    # full list instead would re-select finished clips and fetch nothing, which
-    # is exactly wrong for the batch-and-wait workflow the rate limit forces.
-    if args.limit:
-        todo = todo[:args.limit]
+    def outstanding():
+        already = set()
+        if done_file.exists():
+            already = {ln.split()[-1]
+                       for ln in done_file.read_text().splitlines() if ln.strip()}
+        return already, [t for t in targets if t["video_id"] not in already]
 
+    already, todo_all = outstanding()
     print(f"{len(targets)} distinct clips -> {out}")
-    print(f"{len(already)} already downloaded, {remaining} outstanding, "
-          f"{len(todo)} this run\n")
+    print(f"{len(already)} already downloaded, {len(todo_all)} outstanding\n")
     if args.dry_run:
-        for t in todo[:10]:
+        for t in todo_all[:10]:
             print(f"  {t['air_date']}  {t['song'][:48]:<48} {t['video_id']}")
-        if len(todo) > 10:
-            print(f"  ... and {len(todo) - 10} more")
+        if len(todo_all) > 10:
+            print(f"  ... and {len(todo_all) - 10} more")
         return
 
-    failed = []
-    for i, t in enumerate(todo, 1):
-        url = f"https://www.youtube.com/watch?v={t['video_id']}"
+    def fetch(t):
+        """One clip. Returns None on success, or a failure record."""
         cmd = [yt_dlp, "--js-runtimes", args.js_runtime,
                "--download-archive", str(done_file),
                "--write-info-json", "--no-progress", "--no-warnings",
@@ -196,16 +200,54 @@ def main():
                "-f", ("bestaudio[ext=m4a]/bestaudio" if args.audio_only
                       else video_format(args.height,
                                         "" if args.any_codec else "avc1")),
-               url]
-        print(f"[{i}/{len(todo)}] {t['air_date']}  {t['song'][:44]}")
+               f"https://www.youtube.com/watch?v={t['video_id']}"]
         r = subprocess.run(cmd, capture_output=True, text=True)
-        if r.returncode != 0:
-            # A removed video is the expected failure and the reason this
-            # script exists, so it is recorded and the run continues.
-            why = (r.stderr or "").strip().splitlines()
-            failed.append({**{k: t[k] for k in ("video_id", "air_date", "song")},
-                           "error": why[-1] if why else f"exit {r.returncode}"})
-            print(f"    FAILED  {failed[-1]['error'][:110]}")
+        if r.returncode == 0:
+            return None
+        why = (r.stderr or "").strip().splitlines()
+        return {**{k: t[k] for k in ("video_id", "air_date", "song")},
+                "error": why[-1] if why else f"exit {r.returncode}"}
+
+    # Rounds exist because the block is a per-address cooldown, not a pace: the
+    # only thing that clears it is time. A round that downloads nothing at all
+    # is the signature of being blocked, so after --give-up-after such rounds
+    # the loop stops rather than hammering a closed door all night.
+    failed, stalled, round_no = [], 0, 0
+    while True:
+        round_no += 1
+        _, todo = outstanding()
+        if not todo:
+            print("\nNothing outstanding.")
+            break
+        if args.limit:
+            todo = todo[:args.limit]
+        if args.until_done:
+            print(f"--- round {round_no}: {len(todo)} clips ---")
+        failed = []
+        for i, t in enumerate(todo, 1):
+            print(f"[{i}/{len(todo)}] {t['air_date']}  {t['song'][:44]}")
+            bad = fetch(t)
+            if bad:
+                # A removed video is the expected failure and the reason this
+                # script exists, so it is recorded and the run continues.
+                failed.append(bad)
+                print(f"    FAILED  {bad['error'][:110]}")
+        got_this_round = len(todo) - len(failed)
+        if not args.until_done:
+            break
+        stalled = stalled + 1 if got_this_round == 0 else 0
+        if stalled >= args.give_up_after:
+            print(f"\n{stalled} rounds with nothing downloaded. Stopping; the "
+                  f"address is most likely still in cooldown. Re-run later.")
+            break
+        _, left = outstanding()
+        if not left:
+            print("\nNothing outstanding.")
+            break
+        print(f"\n{got_this_round} fetched, {len(left)} left. "
+              f"Sleeping {args.retry_wait / 3600:.1f} h before the next round.\n",
+              flush=True)
+        time.sleep(args.retry_wait)
 
     # The manifest maps every archive entry to its local file, so the download
     # is usable without re-deriving the mapping from filenames.
@@ -223,7 +265,7 @@ def main():
     print(f"\n{len(got)} of {len(targets)} clips on disk, {human(total)}")
     if failed:
         (out / "failed.json").write_text(json.dumps(failed, indent=1))
-        print(f"{len(failed)} failed, listed in {out / 'failed.json'}")
+        print(f"{len(failed)} failed in the last round, listed in {out / 'failed.json'}")
         print("Re-run to retry them; anything already downloaded is skipped.")
 
 
