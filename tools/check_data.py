@@ -28,6 +28,7 @@ COLUMNS = ["air_date", "season", "episode_overall", "episode_in_season", "song",
            "version_covered", "rerun", "video_id", "video_url", "video_source",
            "video_title", "video_views", "video_seconds"]
 
+PAGES = ["index.html", "explore.html", "playlists.html"]
 WATCH_URL = "https://www.youtube.com/watch?v="
 # the watch_videos endpoint silently truncates past this many ids
 PLAYLIST_CAP = 50
@@ -124,7 +125,10 @@ def main():
               f"missing from playlists: {sorted(kelly - flat)[:5]}")
 
     print("\nrendered pages")
-    for name in ("index.html", "explore.html"):
+    # per-page floors, roughly half of current size: catches a page that built
+    # empty or truncated without failing on ordinary growth
+    FLOOR = {"index.html": 400_000, "explore.html": 100_000, "playlists.html": 20_000}
+    for name in PAGES:
         raw = (ROOT / name).read_bytes()
         check(f"{name}: declares a charset", b"<meta charset" in raw)
         # a double-escaped CSS escape once emitted a real NUL, which made grep
@@ -133,7 +137,34 @@ def main():
         # design_tokens carries doubled braces for f-string embedding; forgetting
         # to undouble them breaks the whole stylesheet without any error
         check(f"{name}: no unexpanded '{{{{'", b"{{" not in raw)
-        check(f"{name}: non-trivial size", len(raw) > 50_000, f"{len(raw)} bytes")
+        check(f"{name}: non-trivial size", len(raw) > FLOOR[name],
+              f"{len(raw)} bytes, floor {FLOOR[name]}")
+        # a placeholder that survives into the output is a silently broken link
+        check(f"{name}: no unreplaced __PLACEHOLDER__",
+              not re.search(r"__[A-Z][A-Z_]{2,}__", raw.decode("utf-8", "replace")))
+
+    print("\nnav ties the three pages together")
+    for name in PAGES:
+        page = (ROOT / name).read_text(encoding="utf-8")
+        rels = set(re.findall(r'data-rel="([^"]+)"', page))
+        check(f"{name}: links to all three pages", rels >= set(PAGES),
+              f"missing {sorted(set(PAGES) - rels)}")
+        cur = re.findall(r'<a href="([^"]+)" data-rel="[^"]+" aria-current="page"', page)
+        check(f"{name}: marks itself as current", cur == [name], f"got {cur}")
+        # on claude.ai the pages are separate artifacts, so each needs the map
+        arts = set(re.findall(r"claude\.ai/code/artifact/[0-9a-f-]+", page))
+        check(f"{name}: carries all three artifact URLs", len(arts) == 3,
+              f"found {len(arts)}")
+
+    print("\nplaylists page")
+    plist = (ROOT / "playlists.html").read_text(encoding="utf-8")
+    ids = {i for group in re.findall(r"watch_videos\?video_ids=([\w,\-]+)", plist)
+           for i in group.split(",")}
+    check("every playlist id appears in the CSV", ids <= (kelly | guest),
+          sorted(ids - (kelly | guest))[:5])
+    check("covers exactly the Kelly-only clips", ids == kelly,
+          f"only on page: {sorted(ids - kelly)[:5]}\n"
+          f"missing: {sorted(kelly - ids)[:5]}")
 
     print("\nshare card")
     og = ROOT / "og-image.png"
@@ -151,7 +182,7 @@ def main():
         check("og-image.png under 5 MB", len(raw) < 5_000_000,
               f"{len(raw) / 1024:.0f} KB")
 
-    for name in ("index.html", "explore.html"):
+    for name in PAGES:
         page = (ROOT / name).read_text(encoding="utf-8")
         head = page[:4000]
         for tag in ("og:title", "og:image", "og:url", "twitter:card"):

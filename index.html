@@ -71,10 +71,18 @@ a { color:inherit; }
 .meter { display:block; height:3px; background:var(--rule-soft); border-radius:2px; overflow:hidden; }
 .meter i { display:block; height:100%; background:var(--sung); border-radius:2px; }
 
+
+.nav { display:flex; flex-wrap:wrap; gap:2px; align-items:center;
+  padding:16px 0 0; margin:0 0 -6px; }
+.nav a { font-size:14px; font-weight:700; text-decoration:none; color:var(--unsung);
+  padding:7px 12px 6px; border-bottom:2px solid transparent; white-space:nowrap; }
+.nav a:hover { color:var(--ink); border-bottom-color:var(--rule); }
+.nav a[aria-current="page"] { color:var(--ink); border-bottom-color:var(--sung); }
+
 .page { max-width:1000px; margin:0 auto; padding:0 22px 80px; }
 
 /* ---------- opening ---------- */
-.hero { padding:64px 0 30px; border-bottom:2px solid var(--ink); }
+.hero { padding:30px 0 30px; border-bottom:2px solid var(--ink); }
 .hero h1 {
   font-family:"Big Shoulders Display",Chivo,sans-serif; font-weight:800;
   font-size:clamp(52px,10.5vw,132px); line-height:.86; letter-spacing:-.01em;
@@ -183,6 +191,7 @@ a { color:inherit; }
 </style>
 
 <div class="page">
+  <nav class="nav" aria-label="Pages"><a href="index.html" data-rel="index.html" aria-current="page">The Archive</a><a href="explore.html" data-rel="explore.html">Data Explorer</a><a href="playlists.html" data-rel="playlists.html">Playlists</a></nav>
   <header class="hero">
     <h1><span class="wipe">Every song she<br>opened with</span></h1>
     <p class="sub">For seven years <b>Kelly Clarkson</b> started her show by covering somebody
@@ -266,7 +275,9 @@ a { color:inherit; }
         </ul>
         <h4 style="margin-top:16px">Covered most</h4>
         <ul class="rank"><li><span>Whitney Houston</span><b>12</b></li><li><span>Coldplay</span><b>9</b></li><li><span>Miley Cyrus</span><b>8</b></li><li><span>Billie Eilish</span><b>8</b></li><li><span>Madonna</span><b>7</b></li><li><span>Adele</span><b>7</b></li><li><span>Avery Anna</span><b>7</b></li><li><span>Chappell Roan</span><b>7</b></li></ul>
-        <a class="leave" id="toexplore" href="explore.html">Explore the data</a>
+        <a class="leave" href="explore.html" data-rel="explore.html">Explore the data</a>
+        <a class="leave" href="playlists.html" data-rel="playlists.html"
+           style="margin-left:18px">Play them all</a>
       </div>
     </div>
   </footer>
@@ -285,9 +296,27 @@ a { color:inherit; }
       rows=[].slice.call(document.querySelectorAll('.row')),
       total=rows.length, pick=new Set(), order=[].slice.call(log.children);
 
-  var ex=document.getElementById('toexplore');
-  if (!(location.protocol==='file:'||/^(127\.|localhost)/.test(location.hostname))) {
-    ex.setAttribute('href','https://claude.ai/code/artifact/41950d92-c42a-434c-9f75-f214cc1b3dfd');
+
+  // On claude.ai the three pages are separate artifacts, so the relative
+  // hrefs cannot resolve; everywhere else they are siblings and already right.
+  var ARTIFACT = {"index.html": "https://claude.ai/code/artifact/5e11c4ba-11e2-4128-a1ad-31af1f13afea", "explore.html": "https://claude.ai/code/artifact/41950d92-c42a-434c-9f75-f214cc1b3dfd", "playlists.html": "https://claude.ai/code/artifact/31e56e13-f295-4a33-b7b5-07cc30151d41"};
+  if (/(^|\.)claude\.ai$/.test(location.hostname)) {
+    var navlinks = document.querySelectorAll('.nav a[data-rel]');
+    for (var i = 0; i < navlinks.length; i++) {
+      var target = ARTIFACT[navlinks[i].getAttribute('data-rel')];
+      if (target && target.indexOf('__') !== 0) {
+        navlinks[i].setAttribute('href', target);
+      }
+    }
+  }
+
+  // the footer links to the other pages carry data-rel too, so they follow
+  var extra = document.querySelectorAll('a.leave[data-rel]');
+  if (/(^|\.)claude\.ai$/.test(location.hostname)) {
+    for (var j = 0; j < extra.length; j++) {
+      var to = ARTIFACT[extra[j].getAttribute('data-rel')];
+      if (to && to.indexOf('__') !== 0) { extra[j].setAttribute('href', to); }
+    }
   }
 
   function norm(s) {

@@ -71,16 +71,20 @@ a { color:inherit; }
 .meter { display:block; height:3px; background:var(--rule-soft); border-radius:2px; overflow:hidden; }
 .meter i { display:block; height:100%; background:var(--sung); border-radius:2px; }
 
+.nav { display:flex; flex-wrap:wrap; gap:2px; align-items:center;
+  padding:16px 0 0; margin:0 0 -6px; }
+.nav a { font-size:14px; font-weight:700; text-decoration:none; color:var(--unsung);
+  padding:7px 12px 6px; border-bottom:2px solid transparent; white-space:nowrap; }
+.nav a:hover { color:var(--ink); border-bottom-color:var(--rule); }
+.nav a[aria-current="page"] { color:var(--ink); border-bottom-color:var(--sung); }
+
 .wrap { max-width:1200px; margin:0 auto; padding:0 22px 70px; }
 
 .top { display:flex; flex-wrap:wrap; gap:18px; align-items:flex-end;
-  justify-content:space-between; padding:52px 0 20px; border-bottom:2px solid var(--ink); }
+  justify-content:space-between; padding:26px 0 20px; border-bottom:2px solid var(--ink); }
 h1 { font-family:"Big Shoulders Display",Chivo,sans-serif; font-weight:800;
   font-size:clamp(42px,7vw,86px); line-height:.86; margin:0; }
 .top p { margin:10px 0 0; color:var(--ink-2); max-width:56ch; font-size:16px; }
-.back { font-size:14px; font-weight:700; text-decoration:none; color:var(--sung);
-  border-bottom:2px solid var(--sung); white-space:nowrap; }
-.back:hover { background:var(--sung); color:var(--panel); }
 
 .tiles { display:flex; flex-wrap:wrap; gap:0; margin:0; padding:20px 0 0; list-style:none;
   border-bottom:1px solid var(--rule); }
@@ -174,13 +178,13 @@ td.who { white-space:nowrap; }
 </style>
 
 <div class="wrap">
+  <nav class="nav" aria-label="Pages"><a href="index.html" data-rel="index.html">The Archive</a><a href="explore.html" data-rel="explore.html" aria-current="page">Data Explorer</a><a href="playlists.html" data-rel="playlists.html">Playlists</a></nav>
   <header class="top">
     <div>
       <h1>Kellyoke Data Explorer</h1>
       <p>Slice the full record of every Kellyoke: 1,245 performances over seven seasons.
          Filter and sort below; the charts follow whatever you have selected.</p>
     </div>
-    <a class="backlink" id="backlink" href="https://claude.ai/code/artifact/5e11c4ba-11e2-4128-a1ad-31af1f13afea">Back to the archive &rarr;</a>
   </header>
 
   <div class="tiles" id="tiles"></div>
@@ -288,14 +292,20 @@ td.who { white-space:nowrap; }
       D_VER=8,D_RERUN=9,D_VID=10,D_SRC=11,D_GEN=12,D_YEAR=13,D_VIEWS=14,D_DUR=15;
   var GENRES = ["Pop", "Rock", "Country", "R&B / Soul", "Not listed", "Electronic", "Hip hop", "Christmas", "Folk", "Jazz / Blues", "World", "Punk", "Gospel", "Reggae", "Metal", "Classical", "Musical theatre", "Latin"], DECADES = [1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
 
-  // The archive is a sibling file everywhere except the Claude artifact host,
-  // where the two pages are separate artifacts with unrelated URLs. So default
-  // to the relative link and keep the absolute one only on claude.ai. This
-  // covers file://, localhost, and kellyokes.netlify.app alike.
-  var bl=document.getElementById('backlink');
-  if (!/(^|\.)claude\.ai$/.test(location.hostname)) {
-    bl.setAttribute('href','index.html');
+
+  // On claude.ai the three pages are separate artifacts, so the relative
+  // hrefs cannot resolve; everywhere else they are siblings and already right.
+  var ARTIFACT = {"index.html": "https://claude.ai/code/artifact/5e11c4ba-11e2-4128-a1ad-31af1f13afea", "explore.html": "https://claude.ai/code/artifact/41950d92-c42a-434c-9f75-f214cc1b3dfd", "playlists.html": "https://claude.ai/code/artifact/31e56e13-f295-4a33-b7b5-07cc30151d41"};
+  if (/(^|\.)claude\.ai$/.test(location.hostname)) {
+    var navlinks = document.querySelectorAll('.nav a[data-rel]');
+    for (var i = 0; i < navlinks.length; i++) {
+      var target = ARTIFACT[navlinks[i].getAttribute('data-rel')];
+      if (target && target.indexOf('__') !== 0) {
+        navlinks[i].setAttribute('href', target);
+      }
+    }
   }
+
 
   function norm(s){ return (s||'').toLowerCase().normalize('NFKD')
     .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim(); }

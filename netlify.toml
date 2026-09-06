@@ -18,7 +18,7 @@
   command = """
     python3 tools/check_data.py && \
     mkdir -p _site && \
-    cp index.html explore.html performances.csv PLAYLISTS.md og-image.png _site/
+    cp index.html explore.html playlists.html performances.csv PLAYLISTS.md og-image.png _site/
   """
 
 [build.environment]
@@ -42,6 +42,11 @@
 [[redirects]]
   from = "/explore"
   to = "/explore.html"
+  status = 301
+
+[[redirects]]
+  from = "/playlists"
+  to = "/playlists.html"
   status = 301
 
 [[redirects]]

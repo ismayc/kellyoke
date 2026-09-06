@@ -74,3 +74,64 @@ a {{ color:inherit; }}
 .meter {{ display:block; height:3px; background:var(--rule-soft); border-radius:2px; overflow:hidden; }}
 .meter i {{ display:block; height:100%; background:var(--sung); border-radius:2px; }}
 """
+
+# ---------------------------------------------------------------- the nav
+# Three pages that should feel like one site. Unlike TOKENS above, these are
+# functions returning ready-to-use text with single braces: they are always
+# interpolated as a value, never inlined into an f-string literal, so there is
+# no doubling to remember.
+
+PAGES = [
+    ("index.html", "The Archive"),
+    ("explore.html", "Data Explorer"),
+    ("playlists.html", "Playlists"),
+]
+
+# Each page is also published as a separate Claude Artifact, where the others
+# are not sibling files. Relative links are the default because they are right
+# on every other host; claude.ai is the exception, patched at runtime.
+ARTIFACT = {
+    "index.html": "https://claude.ai/code/artifact/5e11c4ba-11e2-4128-a1ad-31af1f13afea",
+    "explore.html": "https://claude.ai/code/artifact/41950d92-c42a-434c-9f75-f214cc1b3dfd",
+    "playlists.html": "https://claude.ai/code/artifact/31e56e13-f295-4a33-b7b5-07cc30151d41",
+}
+
+
+def nav(current):
+    """The page switcher. `current` is a filename from PAGES."""
+    links = []
+    for href, label in PAGES:
+        here = ' aria-current="page"' if href == current else ""
+        # data-rel survives host rewriting; Netlify's Pretty URLs turns the
+        # href into "/explore", which would no longer match the lookup table
+        links.append(f'<a href="{href}" data-rel="{href}"{here}>{label}</a>')
+    return f'<nav class="nav" aria-label="Pages">{"".join(links)}</nav>'
+
+
+def nav_css():
+    return """
+.nav { display:flex; flex-wrap:wrap; gap:2px; align-items:center;
+  padding:16px 0 0; margin:0 0 -6px; }
+.nav a { font-size:14px; font-weight:700; text-decoration:none; color:var(--unsung);
+  padding:7px 12px 6px; border-bottom:2px solid transparent; white-space:nowrap; }
+.nav a:hover { color:var(--ink); border-bottom-color:var(--rule); }
+.nav a[aria-current="page"] { color:var(--ink); border-bottom-color:var(--sung); }
+"""
+
+
+def nav_js():
+    import json
+    return ("""
+  // On claude.ai the three pages are separate artifacts, so the relative
+  // hrefs cannot resolve; everywhere else they are siblings and already right.
+  var ARTIFACT = %s;
+  if (/(^|\\.)claude\\.ai$/.test(location.hostname)) {
+    var navlinks = document.querySelectorAll('.nav a[data-rel]');
+    for (var i = 0; i < navlinks.length; i++) {
+      var target = ARTIFACT[navlinks[i].getAttribute('data-rel')];
+      if (target && target.indexOf('__') !== 0) {
+        navlinks[i].setAttribute('href', target);
+      }
+    }
+  }
+""" % json.dumps(ARTIFACT))

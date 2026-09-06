@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the Kellyoke Data Explorer: faceted table + charts over the dataset."""
 import json, os, collections
-from design_tokens import SEASON_COLOR, FONTS, TOKENS
+from design_tokens import SEASON_COLOR, FONTS, TOKENS, nav, nav_css, nav_js
 
 S = os.path.dirname(os.path.abspath(__file__))
 REPO = "/Users/chesterismay/repos/kellyoke"
@@ -44,7 +44,6 @@ GENRES_JSON = json.dumps(GENRES, ensure_ascii=False)
 DECADES_JSON = json.dumps(DECADES)
 SRC_JSON = json.dumps(sources, ensure_ascii=False)
 SC_JSON = json.dumps(SEASON_COLOR)
-ARCHIVE_URL = "https://claude.ai/code/artifact/5e11c4ba-11e2-4128-a1ad-31af1f13afea"
 
 HTML = """<meta charset="utf-8">
 <title>Kellyoke Data Explorer</title>
@@ -64,13 +63,10 @@ __FONTS__
 .wrap { max-width:1200px; margin:0 auto; padding:0 22px 70px; }
 
 .top { display:flex; flex-wrap:wrap; gap:18px; align-items:flex-end;
-  justify-content:space-between; padding:52px 0 20px; border-bottom:2px solid var(--ink); }
+  justify-content:space-between; padding:26px 0 20px; border-bottom:2px solid var(--ink); }
 h1 { font-family:"Big Shoulders Display",Chivo,sans-serif; font-weight:800;
   font-size:clamp(42px,7vw,86px); line-height:.86; margin:0; }
 .top p { margin:10px 0 0; color:var(--ink-2); max-width:56ch; font-size:16px; }
-.back { font-size:14px; font-weight:700; text-decoration:none; color:var(--sung);
-  border-bottom:2px solid var(--sung); white-space:nowrap; }
-.back:hover { background:var(--sung); color:var(--panel); }
 
 .tiles { display:flex; flex-wrap:wrap; gap:0; margin:0; padding:20px 0 0; list-style:none;
   border-bottom:1px solid var(--rule); }
@@ -164,13 +160,13 @@ td.who { white-space:nowrap; }
 </style>
 
 <div class="wrap">
+  __NAV__
   <header class="top">
     <div>
       <h1>Kellyoke Data Explorer</h1>
       <p>Slice the full record of every Kellyoke: 1,245 performances over seven seasons.
          Filter and sort below; the charts follow whatever you have selected.</p>
     </div>
-    <a class="backlink" id="backlink" href="__ARCHIVE__">Back to the archive &rarr;</a>
   </header>
 
   <div class="tiles" id="tiles"></div>
@@ -278,14 +274,7 @@ td.who { white-space:nowrap; }
       D_VER=8,D_RERUN=9,D_VID=10,D_SRC=11,D_GEN=12,D_YEAR=13,D_VIEWS=14,D_DUR=15;
   var GENRES = __GENRES__, DECADES = __DECADES__;
 
-  // The archive is a sibling file everywhere except the Claude artifact host,
-  // where the two pages are separate artifacts with unrelated URLs. So default
-  // to the relative link and keep the absolute one only on claude.ai. This
-  // covers file://, localhost, and kellyokes.netlify.app alike.
-  var bl=document.getElementById('backlink');
-  if (!/(^|\\.)claude\\.ai$/.test(location.hostname)) {
-    bl.setAttribute('href','index.html');
-  }
+__NAVJS__
 
   function norm(s){ return (s||'').toLowerCase().normalize('NFKD')
     .replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\\s+/g,' ').trim(); }
@@ -753,9 +742,11 @@ HTML = (HTML.replace("__DATA__", DATA)
             .replace("__SEASONCOLORS__", SC_JSON)
             .replace("__GENRES__", GENRES_JSON)
             .replace("__DECADES__", DECADES_JSON)
-            .replace("__ARCHIVE__", ARCHIVE_URL)
+            .replace("__NAV__", nav("explore.html"))
+            .replace("__NAVJS__", nav_js())
             .replace("__FONTS__", FONTS)
-            .replace("__TOKENS__", TOKENS.replace("{{","{").replace("}}","}")))
+            .replace("__TOKENS__", TOKENS.replace("{{","{").replace("}}","}")
+                     + nav_css()))
 
 out = os.path.join(S, "explore.html")
 open(out, "w").write(HTML)

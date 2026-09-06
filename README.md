@@ -19,6 +19,7 @@ single Latin track.
 |---|---|
 | `index.html` | The archive: every cover in air-date order, searchable, filterable by season. Open it in a browser. |
 | `explore.html` | The data explorer: sort and filter by season, genre, decade, performer, with charts that follow the selection. |
+| `playlists.html` | The playlists page: every instant YouTube playlist, by season or the whole run, rendered from the same data as `PLAYLISTS.md`. |
 | `performances.csv` | All 1,245 entries, one row each, for spreadsheet work. |
 | `PLAYLISTS.md` | Instant YouTube playlist links, per season and for the whole archive. |
 | `video-urls.txt` | Plain video URLs grouped by season, for other tools. |
@@ -100,9 +101,14 @@ the site, so a dataset that fails its own invariants fails the build rather than
 reaching the page.
 
 Netlify's Pretty URLs post-processing rewrites `explore.html` to `/explore` in
-the served HTML, which the redirect in `netlify.toml` resolves. The explorer's
-link back to the archive is relative everywhere except `claude.ai`, where the
-two pages are separate Artifacts with unrelated URLs.
+the served HTML, which the redirects in `netlify.toml` resolve.
+
+The three pages share a nav defined once in `pipeline/design_tokens.py`. Its
+links are relative, which is correct everywhere except `claude.ai`, where each
+page is a separate Artifact with an unrelated URL; a few lines of JavaScript
+swap in the Artifact URLs on that host only. Each link carries a `data-rel`
+attribute because Pretty URLs rewrites the `href` itself, and the lookup has to
+survive that.
 
 `tools/check_links.py` runs monthly. It asks YouTube's oEmbed endpoint whether
 each video still resolves and opens an issue listing any that have gone. Only a

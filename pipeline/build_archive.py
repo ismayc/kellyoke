@@ -5,7 +5,7 @@ Design: the karaoke monitor. Rows are ruled lines, not cards; the only ornament
 is the sung/unsung fill, and it always stands for a proportion.
 """
 import json, os, re, html, unicodedata, collections
-from design_tokens import SEASON_COLOR, FONTS, TOKENS
+from design_tokens import SEASON_COLOR, FONTS, TOKENS, nav, nav_css, nav_js
 
 S = os.path.dirname(os.path.abspath(__file__))
 REPO = "/Users/chesterismay/repos/kellyoke"
@@ -177,10 +177,11 @@ HTML = f"""<meta charset="utf-8">
 <meta name="twitter:card" content="summary_large_image">
 {FONTS}
 <style>{TOKENS_CSS}
+{nav_css()}
 .page {{ max-width:1000px; margin:0 auto; padding:0 22px 80px; }}
 
 /* ---------- opening ---------- */
-.hero {{ padding:64px 0 30px; border-bottom:2px solid var(--ink); }}
+.hero {{ padding:30px 0 30px; border-bottom:2px solid var(--ink); }}
 .hero h1 {{
   font-family:"Big Shoulders Display",Chivo,sans-serif; font-weight:800;
   font-size:clamp(52px,10.5vw,132px); line-height:.86; letter-spacing:-.01em;
@@ -289,6 +290,7 @@ HTML = f"""<meta charset="utf-8">
 </style>
 
 <div class="page">
+  {nav("index.html")}
   <header class="hero">
     <h1><span class="wipe">Every song she<br>opened with</span></h1>
     <p class="sub">For seven years <b>Kelly Clarkson</b> started her show by covering somebody
@@ -372,7 +374,9 @@ HTML = f"""<meta charset="utf-8">
         </ul>
         <h4 style="margin-top:16px">Covered most</h4>
         <ul class="rank">{top_list}</ul>
-        <a class="leave" id="toexplore" href="explore.html">Explore the data</a>
+        <a class="leave" href="explore.html" data-rel="explore.html">Explore the data</a>
+        <a class="leave" href="playlists.html" data-rel="playlists.html"
+           style="margin-left:18px">Play them all</a>
       </div>
     </div>
   </footer>
@@ -391,9 +395,14 @@ HTML = f"""<meta charset="utf-8">
       rows=[].slice.call(document.querySelectorAll('.row')),
       total=rows.length, pick=new Set(), order=[].slice.call(log.children);
 
-  var ex=document.getElementById('toexplore');
-  if (!(location.protocol==='file:'||/^(127\\.|localhost)/.test(location.hostname))) {{
-    ex.setAttribute('href','__EXPLORE__');
+{nav_js()}
+  // the footer links to the other pages carry data-rel too, so they follow
+  var extra = document.querySelectorAll('a.leave[data-rel]');
+  if (/(^|\\.)claude\\.ai$/.test(location.hostname)) {{
+    for (var j = 0; j < extra.length; j++) {{
+      var to = ARTIFACT[extra[j].getAttribute('data-rel')];
+      if (to && to.indexOf('__') !== 0) {{ extra[j].setAttribute('href', to); }}
+    }}
   }}
 
   function norm(s) {{
@@ -458,9 +467,6 @@ HTML = f"""<meta charset="utf-8">
 }})();
 </script>
 """
-
-HTML = HTML.replace("__EXPLORE__",
-                    "https://claude.ai/code/artifact/41950d92-c42a-434c-9f75-f214cc1b3dfd")
 
 out = os.path.join(S, "kellyoke.html")
 open(out, "w").write(HTML)
