@@ -9,7 +9,7 @@
 <meta property="og:image" content="https://kellyokes.netlify.app/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Every song she opened with. The Kelly Clarkson Show, 2019 to 2026.">
+<meta property="og:image:alt" content="Every Kellyoke. The Kelly Clarkson Show, 2019 to 2026.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -237,7 +237,7 @@ td.who { white-space:nowrap; }
       <div id="chSeason"></div>
     </div>
     <div class="card wide">
-      <h2>Covers per month</h2>
+      <h2>Kellyokes per month</h2>
       <p class="sub">The run of the show, hiatus gaps and all.</p>
       <div id="chTime"></div>
     </div>
@@ -248,7 +248,7 @@ td.who { white-space:nowrap; }
     </div>
     <div class="card">
       <h2>When the original came out</h2>
-      <p class="sub">How far back each cover reaches.</p>
+      <p class="sub">How far back each song reaches.</p>
       <div id="chDecade"></div>
     </div>
     <div class="card">
@@ -407,7 +407,7 @@ td.who { white-space:nowrap; }
     var max=Math.max.apply(null,keys.map(function(k){return by[k];})) || 1;
     var W=1000,H=190,PL=34,PR=8,PT=12,PB=28;
     var iw=W-PL-PR, ih=H-PT-PB, step=iw/(keys.length-1);
-    var svg=el('svg',{viewBox:'0 0 '+W+' '+H,role:'img','aria-label':'Covers per month'});
+    var svg=el('svg',{viewBox:'0 0 '+W+' '+H,role:'img','aria-label':'Kellyokes per month'});
     [0,.5,1].forEach(function(f){
       var y=PT+ih-ih*f;
       svg.appendChild(el('line',{x1:PL,x2:W-PR,y1:y,y2:y,class:'gridline'}));
@@ -428,7 +428,7 @@ td.who { white-space:nowrap; }
       var hit=el('rect',{x:pts[i][0]-step/2,y:PT,width:step,height:ih,fill:'transparent',class:'mark'});
       var dt=new Date(k+'-01T00:00:00');
       bindTip(hit,'<b>'+dt.toLocaleString('en-US',{month:'long',year:'numeric'})+'</b><br>'+
-        by[k]+(by[k]===1?' cover':' covers'));
+        by[k]+(by[k]===1?' Kellyoke':' Kellyokes'));
       svg.appendChild(hit);
     });
     host.appendChild(svg);
@@ -543,7 +543,7 @@ td.who { white-space:nowrap; }
       var cx=PL+band*i+band/2, h=ih*(by[d]/max), y=PT+ih-h;
       var b=el('rect',{x:cx-bw/2,y:y,width:bw,height:Math.max(h,1),rx:4,
         fill:'var(--sung)',class:'mark'});
-      bindTip(b,'<b>'+d+'s</b><br>'+by[d]+(by[d]===1?' cover':' covers'));
+      bindTip(b,'<b>'+d+'s</b><br>'+by[d]+(by[d]===1?' song':' songs'));
       svg.appendChild(b);
       var lt=el('text',{x:cx,y:PT+ih+15,class:'axis','text-anchor':'middle'});
       lt.textContent="'"+String(d).slice(2); svg.appendChild(lt);

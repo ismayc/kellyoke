@@ -110,7 +110,7 @@ HTML = f"""<meta charset="utf-8">
 <meta property="og:image" content="https://kellyokes.netlify.app/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Every song she opened with. The Kelly Clarkson Show, 2019 to 2026.">
+<meta property="og:image:alt" content="Every Kellyoke. The Kelly Clarkson Show, 2019 to 2026.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {FONTS}
@@ -194,7 +194,7 @@ a {{ color:inherit; }}
   <header class="hero">
     <h1>Playlists</h1>
     <p class="sub"><b>{total_videos:,} clips</b> covering {n_covered:,} of Kelly's
-      {n_kelly:,} opening covers, by season or the whole run end to end. The counts
+      {n_kelly:,} opening numbers, by season or the whole run end to end. The counts
       differ because a clip appears once: {n_reused} of those mornings are reruns,
       medleys, or a song she came back to where only one recording survives.
       Each link opens straight in YouTube, no account needed.</p>
@@ -219,7 +219,7 @@ a {{ color:inherit; }}
     <p><b>Why {total_videos:,} and not {n_kelly:,}?</b> A queue holds each clip once.
       Kelly opened {n_kelly:,} mornings and {n_covered:,} of those have a surviving
       recording, but {n_reused} of them point at a clip that is already in the queue:
-      she covered the song again on a later morning and only one recording was ever
+      she sang the song again on a later morning and only one recording was ever
       posted, or the episode was a rerun, or a single medley clip covers several songs
       at once. One recording of <i>You Lie</i> stands in for four separate mornings.
       The <a class="play" href="index.html" data-rel="index.html">archive</a> lists all

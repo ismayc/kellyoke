@@ -125,10 +125,10 @@ def html():
 
 <div>
   <p class="eyebrow">The Kelly Clarkson Show &nbsp;&middot;&nbsp; 2019 to 2026</p>
-  <h1>Every song she<br>opened with</h1>
+  <h1>Every<br>Kellyoke</h1>
   <div class="rule"></div>
-  <p class="lede">Seven years of opening covers, each one linked to
-     <b>a clip on YouTube</b>.</p>
+  <p class="lede">Seven years of the song that opened the show, each one linked
+     to <b>a clip on YouTube</b>.</p>
 </div>
 <footer>
   <div>

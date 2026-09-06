@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The Kellyoke Archive - chronological log of every cover.
+"""The Kellyoke Archive - chronological log of every Kellyoke.
 
 Design: the karaoke monitor. Rows are ruled lines, not cards; the only ornament
 is the sung/unsung fill, and it always stands for a proportion.
@@ -157,7 +157,7 @@ for season, eps in by_season.items():
         f'<header class="sh">'
         f'<span class="sn">{season}</span>'
         f'<span class="st">Season {season}<b>{eps[0]["date_pretty"]} to {eps[-1]["date_pretty"]}</b></span>'
-        f'<span class="sm"><span class="smn">{s_k} covers</span>'
+        f'<span class="sm"><span class="smn">{s_k} Kellyokes</span>'
         f'<span class="meter"><i style="width:{pct}%"></i></span>'
         f'<span class="smc">{s_v} playable</span></span>'
         f'</header>{"".join(mparts)}</section>')
@@ -176,16 +176,16 @@ TOKENS_CSS = TOKENS.replace("{{", "{").replace("}}", "}")
 
 HTML = f"""<meta charset="utf-8">
 <title>The Kellyoke Archive</title>
-<meta name="description" content="Every cover Kelly Clarkson opened The Kelly Clarkson Show with, from the 2019 premiere to the 2026 finale, in air-date order and linked to the best surviving copy.">
+<meta name="description" content="Every song Kelly Clarkson opened The Kelly Clarkson Show with, from the 2019 premiere to the 2026 finale, in air-date order and linked to the best surviving copy.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="The Kellyoke Archive">
 <meta property="og:url" content="https://kellyokes.netlify.app/">
-<meta property="og:title" content="Every song she opened with">
-<meta property="og:description" content="Seven years of opening covers from The Kelly Clarkson Show, in air-date order and linked to the best surviving copy.">
+<meta property="og:title" content="Every Kellyoke">
+<meta property="og:description" content="Seven years of opening numbers from The Kelly Clarkson Show, in air-date order and linked to the best surviving copy.">
 <meta property="og:image" content="https://kellyokes.netlify.app/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Every song she opened with. The Kelly Clarkson Show, 2019 to 2026.">
+<meta property="og:image:alt" content="Every Kellyoke. The Kelly Clarkson Show, 2019 to 2026.">
 <meta name="twitter:card" content="summary_large_image">
 {FONTS}
 <style>{TOKENS_CSS}
@@ -305,7 +305,7 @@ HTML = f"""<meta charset="utf-8">
   {nav("index.html")}
   <header class="hero">
     <h1><span class="wipe">Every song she<br>opened with</span></h1>
-    <p class="sub">For seven years <i>The Kelly Clarkson Show</i> opened with a cover, sung live
+    <p class="sub">For seven years <i>The Kelly Clarkson Show</i> opened with a song, sung live
       with the house band. <b>Kelly</b> took {eps_kelly:,} of those mornings; a guest took
       {eps_guest}. This is all <b>{n_kelly:,}</b> of hers, in the order they aired, each one
       linked to the best copy still online.</p>
@@ -324,7 +324,7 @@ HTML = f"""<meta charset="utf-8">
   </header>
 
   <ul class="counts">
-    <li><b>{n_kelly:,}</b><span>covers by Kelly</span></li>
+    <li><b>{n_kelly:,}</b><span>sung by Kelly</span></li>
     <li><b>{n_songs:,}</b><span>different songs</span></li>
     <li><b>{n_play:,}</b><span>you can watch</span></li>
     <li><b>{n_ver:,}</b><span>date confirmed by the clip</span></li>
@@ -375,7 +375,7 @@ HTML = f"""<meta charset="utf-8">
             mornings when someone else took the opening number. It was rare until the end, one
             morning in season 4 and none before it, then 20 in season 6 and 46 in season 7.
             Hide them with the button above.</li>
-          <li><b>Her own song</b> marks the {n_classic} times she covered her own catalog.</li>
+          <li><b>Her own song</b> marks the {n_classic} times she sang from her own catalog.</li>
           <li><b>with &hellip;</b> means she sang it as a duet.</li>
           <li>A note like <i>Reba McEntire version</i> means she sang that arrangement rather
             than the original.</li>
@@ -385,7 +385,7 @@ HTML = f"""<meta charset="utf-8">
       <div>
         <h4>Where it is thin</h4>
         <ul>
-          <li>Every one of Kelly's {n_kelly:,} covers is linked to a copy. The last gap,
+          <li>Every one of Kelly's {n_kelly:,} is linked to a copy. The last gap,
             <i>Day-O</i> on October 31, 2024, closed once its clip was found under the song's
             other name.</li>
           <li>Only {sum(1 for _, p in guest if p["video_id"])} of {n_guest} guest turns were

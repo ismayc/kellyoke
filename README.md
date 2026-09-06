@@ -1,6 +1,6 @@
 # Kellyoke
 
-Every cover Kelly Clarkson opened *The Kelly Clarkson Show* with, from the
+Every song Kelly Clarkson opened *The Kelly Clarkson Show* with, from the
 premiere on September 9, 2019 to the series finale on August 31, 2026.
 
 **1,178 performances by Kelly** across 1,233 episodes and seven seasons, plus
@@ -17,7 +17,7 @@ single Latin track.
 
 | File | What it is |
 |---|---|
-| `index.html` | The archive: every cover in air-date order, searchable, filterable by season. Open it in a browser. |
+| `index.html` | The archive: every song in air-date order, searchable, filterable by season. Open it in a browser. |
 | `explore.html` | The data explorer: sort and filter by season, genre, decade, performer, with charts that follow the selection. |
 | `playlists.html` | The playlists page: every instant YouTube playlist, by season or the whole run, rendered from the same data as `PLAYLISTS.md`. |
 | `performances.csv` | All 1,245 entries, one row each, for spreadsheet work. |
@@ -64,7 +64,7 @@ single Latin track.
   date points at that clip. This covers 122 entries, and each one is labeled:
   either the clip states an air date belonging to another night on which the
   same song was sung (117), or it was uploaded before this episode aired (5).
-  The yearly Christmas covers are the main case.
+  The yearly Christmas songs are the main case.
 - Three clips state an air date falling on a Saturday or Sunday. The show never
   aired at the weekend, so those descriptions are wrong; the links themselves
   look right. One further link, *Trouble Blues* (Jun 19, 2024), states a date on
