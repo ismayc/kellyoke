@@ -32,6 +32,13 @@ OV = {
     ("2023-03-13", "She Wants to Move"):        ("3SmlaLyYaug", "KC Videos archive", ""),
     ("2024-10-01", "Lovin', Touchin', Squeezin'"): ("ytpnQsNTVPE", "Xavier Del Cid archive", ""),
     ("2024-10-22", "All the Stars"):            ("JNZ4tomXpOY", "Xavier Del Cid archive", ""),
+    # Two names for one song, and each source parenthesized the other one.
+    # norm() strips parentheses, so the wiki's "Day-O (The Banana Boat Song)"
+    # became "day o" and the clip's "Banana Boat (Day-O)" became "banana boat",
+    # scoring 0.375 against a 0.86 threshold. The clip was in the pool the whole
+    # time. See docs/findings/kellyoke-alternate-titles.md.
+    ("2024-10-31", "Day-O (The Banana Boat Song)"):
+        ("h6gxn1gc91A", "KC Videos archive", ""),
     ("2024-12-03", "All the Stars"):            ("JNZ4tomXpOY", "Xavier Del Cid archive", ""),
     # other uploaders, verified by title + runtime
     ("2019-12-05", "Scars to Your Beautiful"): ("vr_hkOZZkLY", "Other upload", ""),

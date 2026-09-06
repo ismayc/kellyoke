@@ -5,7 +5,7 @@ premiere on September 9, 2019 to the series finale on August 31, 2026.
 
 **1,178 performances by Kelly** across 1,233 episodes and seven seasons, plus
 the **67** mornings a guest sang the opener instead (the show calls those
-Cameo-oke). 1,177 of Kelly's 1,178 are linked to a video, and **898 of those
+Cameo-oke). All 1,178 of Kelly's 1,178 are linked to a video, and **898 of those
 links are confirmed** against the air date stated in the clip's own YouTube
 description rather than inferred from its title.
 
@@ -54,7 +54,6 @@ single Latin track.
 
 ## Known gaps
 
-- One of Kelly's covers has no findable copy: *Day-O* (Oct 31, 2024).
 - Most Cameo-oke mornings were never posted, so only 13 of 67 have a video. A
   guest turn is linked only to a clip that shows the guest; where the sole
   surviving clip of that song is Kelly singing it on another night, the guest

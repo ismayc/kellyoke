@@ -385,7 +385,9 @@ HTML = f"""<meta charset="utf-8">
       <div>
         <h4>Where it is thin</h4>
         <ul>
-          <li>One cover has no findable copy: <i>Day-O</i>, October 31, 2024.</li>
+          <li>Every one of Kelly's {n_kelly:,} covers is linked to a copy. The last gap,
+            <i>Day-O</i> on October 31, 2024, closed once its clip was found under the song's
+            other name.</li>
           <li>Only {sum(1 for _, p in guest if p["video_id"])} of {n_guest} guest turns were
             ever posted.</li>
           <li>Where a song came back on a later morning and only one clip survives, every
