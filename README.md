@@ -38,7 +38,8 @@ single Latin track.
 ## Where the data came from
 
 - **Songs, air dates, episode numbers** — parsed from the wikitext of the seven
-  Wikipedia season articles, which log the Kellyoke for every episode. The
+  Wikipedia season articles, which log the Kellyoke for 1,232 of the 1,233
+  episodes (November 1, 2019 is listed as N/A). The
   episode count reconciles exactly with the number each article declares.
 - **Genre and original release year** — from each song's own Wikipedia infobox,
   falling back to the artist's infobox when the song has no article.

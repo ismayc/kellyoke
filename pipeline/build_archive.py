@@ -34,7 +34,19 @@ n_kelly, n_guest = len(kelly), len(guest)
 n_play = sum(1 for _, p in kelly if p["video_id"])
 n_songs = len({p["song"].lower() for _, p in kelly})
 n_ver = sum(1 for _, p in allp if p.get("date_check") in ("verified", "corrected"))
-n_classic = sum(1 for _, p in kelly if "kelly clarkson" in (p["artist"] or "").lower())
+# Her own catalog, duets she is credited on included. The "version" guard keeps
+# out artist strings like "Chuck Berry Kelly Clarkson version", where her name
+# marks whose arrangement she sang, not whose song it is.
+n_classic = sum(1 for _, p in kelly
+                if "kelly clarkson" in (p["artist"] or "").lower()
+                and "version" not in (p["artist"] or "").lower())
+
+# Episode-level, not performance-level. A handful of mornings carry several
+# songs (medleys, the premiere, the finale), so these do not equal n_kelly and
+# n_guest, and they are the right counts for any claim about how a show opened.
+eps_kelly = sum(1 for r in rows if r["perfs"] and not r["cameo"])
+eps_guest = sum(1 for r in rows if r["perfs"] and r["cameo"])
+eps_none = sum(1 for r in rows if not r["perfs"])
 n_reprise = sum(1 for _, p in allp if p.get("date_check") == "reprise")
 first, last = rows[0], rows[-1]
 first_song = first["perfs"][0] if first["perfs"] else None
@@ -293,9 +305,10 @@ HTML = f"""<meta charset="utf-8">
   {nav("index.html")}
   <header class="hero">
     <h1><span class="wipe">Every song she<br>opened with</span></h1>
-    <p class="sub">For seven years <b>Kelly Clarkson</b> started her show by covering somebody
-      else's song, live, with the house band. This is all <b>{n_kelly:,}</b> of them, in the order
-      they aired, each one linked to the best copy still online.</p>
+    <p class="sub">For seven years <i>The Kelly Clarkson Show</i> opened with a cover, sung live
+      with the house band. <b>Kelly</b> took {eps_kelly:,} of those mornings; a guest took
+      {eps_guest}. This is all <b>{n_kelly:,}</b> of hers, in the order they aired, each one
+      linked to the best copy still online.</p>
     <div class="bookends">
       <div class="bookend">
         <span>It began</span>
@@ -342,8 +355,10 @@ HTML = f"""<meta charset="utf-8">
       <div>
         <h4>The dates</h4>
         <p>Every song, air date and episode number was read straight out of the wikitext of the
-          seven Wikipedia season articles, which record the Kellyoke for all {len(rows):,} episodes.
-          The totals reconcile exactly with the episode count each article declares.</p>
+          seven Wikipedia season articles, which record the Kellyoke for {len(rows) - eps_none:,}
+          of the {len(rows):,} episodes. The totals reconcile exactly with the episode count each
+          article declares. One morning, November 1, 2019, is listed as N/A and has no opening
+          cover here; whether none was sung or none was ever logged, the article does not say.</p>
         <h4 style="margin-top:16px">The videos</h4>
         <p>Matched by title and artist against the show's own YouTube channel and three fan
           archives that mirror the segment. Most clips state their own air date in the
@@ -353,8 +368,10 @@ HTML = f"""<meta charset="utf-8">
       <div>
         <h4>What the labels mean</h4>
         <ul>
-          <li><b>Sung by a guest</b> is the show's Cameo-oke: {n_guest} mornings someone else
-            took the opening number. Hide them with the button above.</li>
+          <li><b>Sung by a guest</b> is the show's Cameo-oke: {n_guest} turns across {eps_guest}
+            mornings when someone else took the opening number. It was rare until the end, one
+            morning in season 4 and none before it, then 20 in season 6 and 46 in season 7.
+            Hide them with the button above.</li>
           <li><b>Her own song</b> marks the {n_classic} times she covered her own catalog.</li>
           <li><b>with &hellip;</b> means she sang it as a duet.</li>
           <li>A note like <i>Reba McEntire version</i> means she sang that arrangement rather
