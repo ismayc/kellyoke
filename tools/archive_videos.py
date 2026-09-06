@@ -82,6 +82,32 @@ def slug(text, limit=60):
     return text[:limit].strip("_") or "untitled"
 
 
+# How likely a source is to still be there next year, worst first. The show's
+# own channel is the safe one: it is the rights holder and is not going to
+# quietly delete its back catalogue. The small fan archives are the fragile
+# ones, and a weekly recap is often the only surviving copy of its songs.
+# Chronological order fetches these last, which is exactly backwards for a
+# backup, so the default order is risk instead of date.
+SOURCE_RISK = {
+    "Weekly recap": 0,
+    "Other upload": 1,
+    "Courtney O'shea archive": 2,
+    "Xavier Del Cid archive": 3,
+    "KC Videos archive": 4,
+    "The Kelly Clarkson Show (official)": 5,
+}
+
+
+def risk_key(t):
+    """Most-endangered first: fragile source, then fewest views.
+
+    View count is a proxy for how likely a clip is to be re-uploaded by someone
+    else if it goes. A copy with 23 views that disappears is gone; one with
+    100,000 probably gets mirrored.
+    """
+    return (SOURCE_RISK.get(t["source"], 2), t["views"], t["air_date"])
+
+
 def load_targets():
     """Distinct video ids, each carrying the performances it stands for.
 
@@ -105,9 +131,10 @@ def load_targets():
             "is_cameo": first["is_cameo"] == "yes",
             "covers": [{"air_date": r["air_date"], "song": r["song"],
                         "performed_by": r["performed_by"]} for r in rows],
+            "source": first["video_source"],
+            "views": int(first["video_views"]) if first["video_views"].isdigit() else 0,
             "stem": f'{first["air_date"]}__{slug(first["song"])}__{vid}',
         })
-    targets.sort(key=lambda t: t["air_date"])
     return targets
 
 
@@ -146,6 +173,9 @@ def main():
     ap.add_argument("--pause", default="4-12", metavar="MIN-MAX",
                     help="randomized seconds between downloads (default: 4-12). "
                          "This is the knob the rate limit responds to")
+    ap.add_argument("--order", choices=("risk", "date"), default="risk",
+                    help="risk fetches the most-endangered clips first, which is "
+                         "what a backup wants; date is chronological (default: risk)")
     ap.add_argument("--until-done", action="store_true",
                     help="keep going in rounds, sleeping between them, until "
                          "nothing is outstanding")
@@ -179,6 +209,7 @@ def main():
     targets = load_targets()
     if args.kelly_only:
         targets = [t for t in targets if not t["is_cameo"]]
+    targets.sort(key=risk_key if args.order == "risk" else (lambda t: t["air_date"]))
 
     out = args.out.expanduser().resolve()
     media = out / "media"
