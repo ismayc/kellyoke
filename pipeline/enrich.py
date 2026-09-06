@@ -19,7 +19,18 @@ JUNK = re.compile(r"^(cite|ref|http|www|isbn|p\.|pp\.|\d+)"
 # ordered rules: first match wins, so "pop rock" lands in Rock and
 # "country pop" in Country, which is how each is normally filed
 FAMILY = [
-    ("Christmas",       r"christmas|holiday|noel|carol"),
+    # Named "Holiday", not "Christmas": the pattern has always matched holiday
+    # songs generally, and the narrower label was never what the rule did.
+    ("Holiday",         r"christmas|holiday|noel|carol"),
+    # Two families the rules genuinely lacked. Before these, family("tv theme")
+    # and family("patriotic") both returned "", which is why the Mister Rogers
+    # and Frasier themes and "America the Beautiful" had nowhere to go. Neither
+    # pattern matches any genre string already in the archive, so adding them
+    # moves nothing that was classified. Funk was deliberately NOT added: the
+    # R&B / Soul rule below already contains "funk", and splitting it out would
+    # have moved 14 performances, Superstition and Kiss among them.
+    ("TV Themes",       r"tv theme|television theme|theme song|sitcom"),
+    ("Patriotic",       r"patriotic|national anthem"),
     ("Gospel",          r"gospel|worship|contemporary christian|\bccm\b|spiritual"),
     ("Musical theatre", r"musical theat|show ?tune|broadway|west end|musical film|\bmusical\b"),
     ("Latin",           r"latin|reggaeton|salsa|bachata|cumbia|tejano|mariachi|ranchera|bossa nova"),
@@ -66,7 +77,7 @@ def family(g):
 # for the same reason "Golden" files under World.
 CATEGORY_FAMILY = [
     ("Patriotic",       r"\bpatriotic songs\b|\bnational anthems?\b"),
-    ("Christmas",       r"\bchristmas (songs|carols|music)\b"),
+    ("Holiday",         r"\bchristmas (songs|carols|music)\b|\bholiday songs\b"),
     ("World",           r"\bk-?pop songs\b|\bsouth korean pop songs\b"),
     # "Songs from <work>" is the giveaway that a song belongs to a named show
     # or film: "Songs from Anything Goes" is what identifies "I Get a Kick Out
@@ -110,46 +121,106 @@ song_by_disp = {k: v for k, v in links["song_links"].items()}
 art_by_disp = {k: v for k, v in links["artist_links"].items()}
 
 
-# Genre strings that BEAT the articles, keyed on (song, artist). HAND_GENRE
-# below only fills a gap; this one wins outright, so it stays tiny and every
-# entry carries its reason. Keyed on both fields because a title alone
-# cross-links different songs that happen to share a name.
-FORCE_GENRE = {
-    # The song article lists only "Dance-pop", which outranks Gloria Estefan's
-    # own Latin pop and takes Latin from 3 songs down to 2. Held where it was
-    # pending Chester's ruling. Delete this entry to let it move to Pop.
-    ("1-2-3", "Gloria Estefan & Miami Sound Machine"): ["Latin pop"],
+# Entries where the season wikitext credits the wrong work entirely, keyed on
+# the credit as written so the wrong one is what matches. These carry the genre
+# strings and year as well as the artist, because the correct article is not
+# linked anywhere in the wikitext and so never gets fetched.
+CREDIT_FIX = {
+    # Two different songs are called "Bloom". The wikitext credits Aqyila,
+    # whose "Bloom" is a 2021 R&B single. The clip title names The Paper Kites
+    # and Chester confirmed by watching that the performance is folk, so this
+    # is their 2010 song. Values from "Bloom (The Paper Kites song)".
+    ("Bloom", "Aqyila"): {
+        "artist": "The Paper Kites",
+        "genres": ["Folk", "indie rock"],
+        "year": 2010,
+    },
 }
 
 
-# Songs the wiki listed with no artist to look up, identified from the clip
-# title, which names the source where the wiki text did not. These supply genre
-# *strings*, not families, so the FAMILY rules below classify them the same way
-# they classify everything fetched from Wikipedia. Nothing here is a guess from
-# the title alone; each one is what the clip says it is.
+# Genres no article could supply, keyed on (song, artist) because a title alone
+# cross-links different songs that share a name. Two sources feed this:
+#
+#   - songs the wiki listed with no artist to look up, identified from the clip
+#     title, which names the source the wiki text did not
+#   - the September 6, 2026 triage, where Chester classified by ear and by
+#     research the entries Wikipedia states no genre for at all, most of them
+#     independent or very recent artists with no infobox
+#
+# These supply genre *strings*, not families, so the FAMILY rules above classify
+# them exactly as they classify everything fetched from Wikipedia. That is why
+# "Golden" files under World: its k-pop string matches the World rule. Nothing
+# here is a guess from a title.
 HAND_GENRE = {
     # "Kellyoke | If I Only Had a Brain (Wizard of Oz)"
-    "If I Only Had a Brain": ["show tune"],
+    # credited both ways in the wikitext, hence two keys
+    ("If I Only Had a Brain", ''): ["show tune"],
+    ("If I Only Had a Brain", 'Harold Arlen and Yip Harburg'): ["show tune"],
     # "Kellyoke | Sisters (From White Christmas)"
-    "Sisters": ["show tune"],
+    ("Sisters", ''): ["show tune"],
     # "'Hopeless War' from 'The Outsiders'", a Broadway musical
-    "Hopeless War": ["show tune"],
+    ("Hopeless War", ''): ["show tune"],
     # "'Golden' from Kpop Demon Hunters"
-    "Golden": ["K-pop", "dance-pop"],
+    ("Golden", ''): ["K-pop", "dance-pop"],
     # "Kellyoke | I Would've Loved You (Jake Hoot & Kelly Clarkson)", Hoot being
     # a country artist and the song a country duet
-    "I Would Have Loved You": ["country"],
+    ("I Would Have Loved You", ''): ["country"],
     # "Kellyoke | Just Sing", the Trolls World Tour ensemble single
-    "Just Sing": ["pop"],
+    ("Just Sing", ''): ["pop"],
     # Kelly's own catalog. The wiki omits the artist on her own songs, so these
     # look artist-less rather than unknown; the clip titles confirm each one.
-    "Dance With Me": ["pop"],
-    "Favorite Kind of High": ["pop"],
-    "People Like Us": ["pop"],
-    "Sober": ["pop"],
-    "Piece by Piece": ["pop"],
-    "I'd Be Lyin'": ["pop"],
+    ("Dance With Me", ''): ["pop"],
+    # credited both ways in the wikitext, hence two keys
+    ("Favorite Kind of High", ''): ["pop"],
+    ("Favorite Kind of High", 'Kelly Clarkson'): ["pop"],
+    ("People Like Us", ''): ["pop"],
+    ("Sober", ''): ["pop"],
+    ("Piece by Piece", ''): ["pop"],
+    ("I'd Be Lyin'", ''): ["pop"],
+    # --- from the September 6, 2026 triage ---
+    ("Won't You Be My Neighbor", 'Fred Rogers'): ['tv theme'],   # TV Themes
+    ('Classic Television theme songs', ''): ['tv theme'],   # TV Themes
+    ('Cain', 'EXES'): ['pop'],   # Pop
+    ('Liar', 'Davina Michelle'): ['pop'],   # Pop
+    ('Paradise', 'Meduza'): ['electronic'],   # Electronic
+    ("Step by Step/Whatta Man/Hangin' Tough", ''): ['R&B'],   # R&B / Soul
+    ('Double Take', 'Dhruv'): ['pop'],   # Pop
+    ("Take Yo' Praise", 'Camille Yarbrough'): ['R&B'],   # Funk
+    ('Peacefully', 'GEMS'): ['pop'],   # Pop
+    ('She Wants to Move', 'N.E.R.D'): ['rock'],   # Rock
+    ('If He Wanted to He Would', 'Kylie Morgan'): ['country'],   # Country
+    ('Mama, Dolly, Jesus', 'Madeline Edwards'): ['country'],   # Country
+    ('Tossed Salad and Scrambled Eggs', 'Kelsey Grammer'): ['tv theme'],   # TV Themes
+    ('Bloom', 'Aqyila'): ['folk'],   # Folk
+    ('When My Fingers Find Your Strings', 'Jeff Daniels'): ['folk'],   # Folk
+    ('Letting Go', 'Angie McMahon'): ['pop'],   # Pop
+    ("Steppin' On Me", 'Fitz & The Tantrums'): ['pop'],   # Pop
+    ('Flames', 'Will Swinton'): ['pop'],   # Pop
+    ("Who's Sorry Now", 'Connie Francis'): ['pop'],   # Pop
+    ('Boyfriend Forever', 'Abbey Romeo'): ['pop'],   # Pop
+    ('7 Days of Weak', 'Ledisi'): ['R&B'],   # R&B / Soul
+    ('What It Feels Like', 'Aly & AJ'): ['folk'],   # Folk
+    ('Just Missed the Train', 'Trine Rein'): ['pop'],   # Pop
+    ('I Got a New One', 'Elizabeth Nichols'): ['country'],   # Country
+    ('Créme Brulée', 'David Archuleta'): ['pop'],   # Pop
+    ('One Good Thing', ''): ['R&B'],   # R&B / Soul
+    ('What It Sounds Like', 'KPop Demon Hunters'): ['k-pop'],   # World
+    ('Complicated', 'Gabby Samone'): ['R&B'],   # R&B / Soul
+    ('The Thing I Love', 'MAX'): ['pop'],   # Pop
+    ('Yeehaw', 'Filmore'): ['country'],   # Country
+    ('Eat Me Alive', 'Cami Petyn'): ['pop'],   # Pop
+    ('Beg', 'Q Parker'): ['R&B'],   # R&B / Soul
+    ('Put It On', 'Q Parker'): ['R&B'],   # R&B / Soul
+    ('Painted You Pretty', 'Hudson Westbrook'): ['country'],   # Country
+    ('Blues in the Night', 'Ella Fitzgerald'): ['jazz'],   # Jazz / Blues
+    ('Bathroom Stall', 'Mikenley Brown'): ['folk'],   # Folk
+    ('Day Late and a Buck Short', 'Julia Cole'): ['country'],   # Country
+    ('Jesus Wept', 'JW Griffin'): ['country'],   # Country
+    ('Suddenly Seymour', 'Lee Wilkof & Ellen Greene'): ['show tune'],   # Musical theatre
+    ('Behind the Door', 'Liv Ciara'): ['R&B'],   # R&B / Soul
+    ('Austin', 'Dasha'): ['country'],   # Country
 }
+
 
 
 def artist_candidates(artist):
@@ -210,12 +281,19 @@ stats = collections.Counter()
 for r in rows:
     yr = int(r["date_iso"][:4])
     for p in r["perfs"]:
+        # A wrong credit is corrected before anything is looked up, so the rest
+        # of the resolution sees the work she actually sang.
+        fix = CREDIT_FIX.get((p["song"], p.get("artist") or ""))
+        if fix:
+            p["artist"] = fix["artist"]
         disp = p["song"].lower()
         sart = song_by_disp.get(disp)
         sm = meta["song"].get(sart) if sart else None
         year = sm["year"] if sm else None
-        genres = FORCE_GENRE.get((p["song"], p.get("artist") or ""), [])
-        src = "forced" if genres else ""
+        genres = []
+        src = ""
+        if fix:
+            genres, year, src = list(fix["genres"]), fix["year"], "credit fix"
         if not genres:
             genres = clean_genres(sm["genres"]) if sm else []
             src = "song" if genres else ""
@@ -228,7 +306,7 @@ for r in rows:
                         src = "artist"
                         break
         if not genres:
-            genres = HAND_GENRE.get(p["song"], [])
+            genres = HAND_GENRE.get((p["song"], p.get("artist") or ""), [])
             if genres:
                 src = "hand"
         fam = family(genres[0]) if genres else ""

@@ -9,9 +9,9 @@ Cameo-oke). All 1,178 of Kelly's 1,178 are linked to a video, and **898 of those
 links are confirmed** against the air date stated in the clip's own YouTube
 description rather than inferred from its title.
 
-The songs she reached for span **1930 to 2025** across **18 genre families**:
-367 pop, 303 rock, 202 country, 168 R&B and soul, and a long tail down to
-three Latin tracks and a single patriotic one.
+The songs she reached for span **1930 to 2025** across **19 genre families**:
+383 pop, 304 rock, 212 country, 176 R&B and soul, and a long tail down to
+two Latin tracks and a single patriotic one. **Every entry has a genre.**
 
 ## Files
 
@@ -58,12 +58,14 @@ three Latin tracks and a single patriotic one.
   guest turn is linked only to a clip that shows the guest; where the sole
   surviving clip of that song is Kelly singing it on another night, the guest
   turn is left unlinked rather than pointed at the wrong performer.
-- 48 of 1,245 entries have no genre, mostly newer or independent artists with
-  no Wikipedia infobox, plus medleys and traditional songs with no single
-  artist. They show as "Not listed" rather than being guessed. Where an article
-  states no genre but its categories name one plainly, such as "1940s jazz
-  standards" or "American patriotic songs", that is used instead; artist
-  categories are not, because they describe a career and not the song.
+- 0 of 1,245 entries have no genre. Most come from the song's own Wikipedia
+  infobox, then the artist's. Where an article states no genre but its
+  categories name one plainly, such as "1940s jazz standards" or "American
+  patriotic songs", that is used instead; artist categories are not, because
+  they describe a career and not the song. The remainder, 48 entries with no
+  infobox anywhere, were classified by hand in September 2026 and are listed
+  one by one in `HAND_GENRE` in `pipeline/enrich.py`, keyed on song and artist
+  with the reasoning kept alongside.
 - Where a song came back on a later morning and only one clip survives, every
   date points at that clip. This covers 122 entries, and each one is labeled:
   either the clip states an air date belonging to another night on which the
