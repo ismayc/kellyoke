@@ -14,6 +14,23 @@ rows = json.load(open(os.path.join(S, "matched.json")))
 
 MEDLEY = re.compile(r"medley|recap", re.I)
 
+# Hand-adjudicated labels, keyed "YYYY-MM-DD|song". These are cases the
+# automatic rules cannot reach because the evidence is in the footage itself
+# rather than in any date, title, or id. Applied last, so they win. Each one
+# records who concluded what, and from what.
+ADJUDICATED = {
+    # The reprise rule keys on clip identity: it fires when two episodes share
+    # one video_id. These two episodes have two different uploads of what turns
+    # out to be one performance, so there is no shared id and the rule cannot
+    # see them. Chester watched both clips on September 5, 2026 and confirmed
+    # the footage is the same, which makes the June 19 encore a reprise of the
+    # January 12 airing. The clip's stated "January 12, 2023" is a year typo
+    # for 2024: no Trouble Blues was sung in 2023 at all, and on that day in
+    # 2023 she sang "Didn't I".
+    "2024-06-19|Trouble Blues": ("reprise", "encore of 2024-01-12, same footage, "
+                                 "confirmed by watching both clips"),
+}
+
 
 def norm(t):
     t = unicodedata.normalize("NFKD", t or "")
@@ -152,6 +169,14 @@ for r in rows:
             p["date_check"] = "baddate"
             baddate += 1
 
+adjudicated = 0
+for r in rows:
+    for p in r["perfs"]:
+        hit = ADJUDICATED.get(f'{r["date_iso"]}|{p["song"]}')
+        if hit:
+            p["date_check"], p["date_check_why"] = hit[0], hit[1]
+            adjudicated += 1
+
 json.dump(rows, open(os.path.join(S, "matched.json"), "w"), indent=1)
 
 print(f"verified against the clip's own airdate : {verified}")
@@ -160,6 +185,7 @@ print(f"rerun (clip shows the first airing)     : {rerun_ok}")
 print(f"within a day (two fallible sources)     : {offby1}")
 print(f"description year typo                   : {yeartypo}")
 print(f"reprise (only one night's clip posted)  : {reprise}")
+print(f"  of which hand-adjudicated             : {adjudicated}")
 print(f"clip dated to a weekend, show never was : {baddate}")
 print(f"uploaded before the episode aired       : {preair}")
 print(f"still unexplained / no stated date      : {unresolved - reprise - baddate - preair}")
