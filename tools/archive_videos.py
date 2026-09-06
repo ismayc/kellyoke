@@ -132,6 +132,9 @@ def main():
                     help="JS runtime for YouTube extraction (default: node)")
     ap.add_argument("--sleep", type=float, default=2.0,
                     help="seconds between requests, to stay polite (default: 2)")
+    ap.add_argument("--pause", default="4-12", metavar="MIN-MAX",
+                    help="randomized seconds between downloads (default: 4-12). "
+                         "This is the knob the rate limit responds to")
     ap.add_argument("--dry-run", action="store_true",
                     help="report what would be fetched and exit")
     args = ap.parse_args()
@@ -148,30 +151,38 @@ def main():
                  "  Install it:   brew install ffmpeg\n"
                  "  Or run audio: --audio-only")
 
+    pause_min, _, pause_max = args.pause.partition("-")
+    pause_max = pause_max or pause_min
+
     targets = load_targets()
     if args.kelly_only:
         targets = [t for t in targets if not t["is_cameo"]]
-    if args.limit:
-        targets = targets[:args.limit]
 
     out = args.out.expanduser().resolve()
     media = out / "media"
     media.mkdir(parents=True, exist_ok=True)
     done_file = out / "downloaded.txt"
 
-    print(f"{len(targets)} distinct clips -> {out}")
-    if args.dry_run:
-        for t in targets[:10]:
-            print(f"  {t['air_date']}  {t['song'][:48]:<48} {t['video_id']}")
-        if len(targets) > 10:
-            print(f"  ... and {len(targets) - 10} more")
-        return
-
     already = set()
     if done_file.exists():
         already = {ln.split()[-1] for ln in done_file.read_text().splitlines() if ln.strip()}
     todo = [t for t in targets if t["video_id"] not in already]
-    print(f"{len(already)} already downloaded, {len(todo)} to go\n")
+    remaining = len(todo)
+    # --limit counts what is still outstanding, not what exists. Slicing the
+    # full list instead would re-select finished clips and fetch nothing, which
+    # is exactly wrong for the batch-and-wait workflow the rate limit forces.
+    if args.limit:
+        todo = todo[:args.limit]
+
+    print(f"{len(targets)} distinct clips -> {out}")
+    print(f"{len(already)} already downloaded, {remaining} outstanding, "
+          f"{len(todo)} this run\n")
+    if args.dry_run:
+        for t in todo[:10]:
+            print(f"  {t['air_date']}  {t['song'][:48]:<48} {t['video_id']}")
+        if len(todo) > 10:
+            print(f"  ... and {len(todo) - 10} more")
+        return
 
     failed = []
     for i, t in enumerate(todo, 1):
@@ -180,6 +191,7 @@ def main():
                "--download-archive", str(done_file),
                "--write-info-json", "--no-progress", "--no-warnings",
                "--sleep-requests", str(args.sleep),
+               "--sleep-interval", pause_min, "--max-sleep-interval", pause_max,
                "-o", str(media / (t["stem"] + ".%(ext)s")),
                "-f", ("bestaudio[ext=m4a]/bestaudio" if args.audio_only
                       else video_format(args.height,
