@@ -1,0 +1,83 @@
+name: link rot
+
+# This is an archive of links to fan uploads, so the slow failure mode is an
+# upload disappearing and an entry quietly pointing at nothing. Runs monthly and
+# opens an issue listing what died. It never fails the build: a red X every month
+# for something nobody broke just teaches people to ignore the X.
+
+on:
+  schedule:
+    - cron: "17 6 1 * *"   # 06:17 UTC on the 1st of each month
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Check only this many random ids (0 = all)"
+        default: "0"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Probe every video id
+        run: python tools/check_links.py --limit "${{ github.event.inputs.limit || 0 }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dead-links
+          path: dead-links.json
+
+      - name: Open an issue if links have died
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const r = JSON.parse(fs.readFileSync('dead-links.json', 'utf8'));
+            if (!r.trustworthy) {
+              core.notice(`Run not trustworthy: ${r.unknown} of ${r.checked} unknown. Not reporting.`);
+              return;
+            }
+            if (r.dead_links.length === 0) {
+              core.notice(`All ${r.checked} links resolve.`);
+              return;
+            }
+            const lines = r.dead_links.map(d => {
+              const e = d.entries[0];
+              const more = d.entries.length > 1 ? ` (+${d.entries.length - 1} more entries)` : '';
+              return `- [ ] \`${d.video_id}\` ${e.air_date} "${e.song}" by ${e.performed_by}${more} ${d.url}`;
+            });
+            const body = [
+              `${r.dead_links.length} of ${r.checked} links no longer resolve.`,
+              '',
+              'YouTube oEmbed answered 404, 403 or 401, which means removed, private or blocked.',
+              `This run had ${r.unknown} unknown (${(r.unknown_share * 100).toFixed(1)}%), under the trust threshold.`,
+              '',
+              ...lines,
+              '',
+              'To fix: find a surviving copy, then re-run the pipeline from `match3.py`.',
+              'See `pipeline/README.md`.',
+            ].join('\n');
+            const title = `Dead links: ${r.dead_links.length} of ${r.checked}`;
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'link-rot',
+            });
+            if (existing.data.length) {
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.data[0].number, title, body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ['link-rot'],
+              });
+            }
