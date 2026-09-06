@@ -118,6 +118,22 @@ clean 404, 403 or 401 counts as dead; a timeout or a rate-limit says something
 about the runner's IP rather than the video, and if too much of a run comes back
 unknown the script reports nothing rather than a list of false alarms.
 
+Detecting rot does not undo it, so `tools/archive_videos.py` takes a local copy
+of the footage. It reads `performances.csv` and fetches one file per distinct
+video id, named `air-date__song__video-id`, with the `.info.json` beside it so a
+clip stays identifiable even after the upload is gone. Runs are resumable: a
+completed id is recorded and skipped, so the run can be interrupted freely.
+
+```bash
+python3 tools/archive_videos.py --out ~/kellyoke-archive --dry-run
+python3 tools/archive_videos.py --out ~/kellyoke-archive
+```
+
+It needs `ffmpeg`, because YouTube serves these clips as separate video and
+audio streams with no pre-muxed format, and `yt-dlp`. Roughly 21 GB at the
+default 720p, about 8 GB at `--height 360`, or about 2 GB with `--audio-only`,
+which needs no muxer. Nothing it writes belongs in the repo.
+
 ## Design
 
 Both pages share one system, built around the karaoke monitor: a line sits
