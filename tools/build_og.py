@@ -56,7 +56,16 @@ def html():
     padding: 58px 64px 54px; display: flex; flex-direction: column;
     justify-content: space-between; overflow: hidden;
     -webkit-font-smoothing: antialiased;
+    position: relative;
   }}
+  /* The type carries the card; the mic fills the right third and sits behind it,
+     drawn in the same near-ground tones so it reads as depth rather than
+     clip art. The one pink band ties it to the rest of the system. */
+  .mic {{
+    position: absolute; right: 74px; bottom: 122px; height: 438px; width: auto;
+    transform: rotate(13deg); transform-origin: 50% 62%;
+  }}
+  body > div, body > footer {{ position: relative; z-index: 1; }}
   .eyebrow {{
     font-size: 21px; font-weight: 700; letter-spacing: .13em;
     text-transform: uppercase; color: {t['unsung']};
@@ -80,11 +89,40 @@ def html():
     border-top: 1px solid {t['rule']}; padding-top: 22px; gap: 30px;
   }}
   .who {{ font-size: 21px; color: {t['unsung']}; }}
+  .by {{ font-size: 19px; color: {t['unsung']}; opacity: .8; margin-top: 7px; }}
+  .by b {{ color: {t['ink2']}; font-weight: 700; }}
   .site {{
     font-size: 22px; font-weight: 700; color: {t['sung']};
     border-bottom: 3px solid {t['sung']}; padding-bottom: 3px; white-space: nowrap;
   }}
 </style>
+<svg class="mic" viewBox="0 0 220 500" fill="none" aria-hidden="true">
+  <defs>
+    <pattern id="mesh" width="15" height="15" patternUnits="userSpaceOnUse">
+      <circle cx="7.5" cy="7.5" r="2.7" fill="{t['unsung']}" opacity=".5"></circle>
+    </pattern>
+    <clipPath id="ball"><circle cx="110" cy="104" r="82"></circle></clipPath>
+  </defs>
+
+  <!-- handle, tapering slightly toward a rounded base -->
+  <path d="M 68,192 L 152,192 L 145,438 Q 145,462 122,462 L 98,462 Q 75,462 75,438 Z"
+        fill="{t['panel']}" stroke="{t['rule']}" stroke-width="3"></path>
+  <!-- a single highlight so the handle reads as round, not flat -->
+  <path d="M 88,206 L 84,436" stroke="{t['rule']}" stroke-width="5"
+        stroke-linecap="round" opacity=".85"></path>
+
+  <!-- grille -->
+  <circle cx="110" cy="104" r="82" fill="#12314C" stroke="{t['rule']}" stroke-width="3"></circle>
+  <g clip-path="url(#ball)">
+    <rect x="0" y="0" width="220" height="220" fill="url(#mesh)"></rect>
+    <path d="M 46,150 A 82,82 0 0 1 60,44" stroke="{t['unsung']}" stroke-width="4"
+          stroke-linecap="round" opacity=".45"></path>
+  </g>
+
+  <!-- the band: the one place the card's pink appears twice -->
+  <rect x="62" y="176" width="96" height="26" rx="9" fill="{t['sung']}"></rect>
+</svg>
+
 <div>
   <p class="eyebrow">The Kelly Clarkson Show &nbsp;&middot;&nbsp; 2019 to 2026</p>
   <h1>Every song she<br>opened with</h1>
@@ -93,7 +131,10 @@ def html():
      <b>a clip on YouTube</b>.</p>
 </div>
 <footer>
-  <p class="who">Searchable by song, artist, season and genre</p>
+  <div>
+    <p class="who">Searchable by song, artist, season and genre</p>
+    <p class="by">Designed by <b>Chester Ismay</b></p>
+  </div>
   <div class="site">kellyokes.netlify.app</div>
 </footer>
 """
