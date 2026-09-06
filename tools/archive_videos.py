@@ -60,6 +60,16 @@ def video_format(height, codec="avc1"):
             f"bestvideo[height<=?{height}]+bestaudio/best[height<=?{height}]/best")
 
 
+def BLOCKED(err):
+    """Is this failure the address being told it looks like a bot?
+
+    Distinct from a dead video, which is the failure this tool exists to catch
+    and must never stop a round.
+    """
+    e = (err or "").lower()
+    return "not a bot" in e or "sign in to confirm" in e
+
+
 def human(n):
     """Bytes as MB until it is genuinely gigabytes, so a small run reads right."""
     return f"{n / 1e9:.2f} GB" if n >= 1e9 else f"{n / 1e6:.0f} MB"
@@ -141,6 +151,9 @@ def main():
                          "nothing is outstanding")
     ap.add_argument("--retry-wait", type=float, default=10800,
                     help="seconds to wait between rounds (default: 3 hours)")
+    ap.add_argument("--abort-after", type=int, default=4,
+                    help="bot checks in a row before abandoning the round "
+                         "(default: 4)")
     ap.add_argument("--give-up-after", type=int, default=3,
                     help="stop after this many rounds that download nothing "
                          "(default: 3)")
@@ -223,7 +236,7 @@ def main():
             todo = todo[:args.limit]
         if args.until_done:
             print(f"--- round {round_no}: {len(todo)} clips ---")
-        failed = []
+        failed, blocked_streak, aborted = [], 0, False
         for i, t in enumerate(todo, 1):
             print(f"[{i}/{len(todo)}] {t['air_date']}  {t['song'][:44]}")
             bad = fetch(t)
@@ -232,7 +245,18 @@ def main():
                 # script exists, so it is recorded and the run continues.
                 failed.append(bad)
                 print(f"    FAILED  {bad['error'][:110]}")
-        got_this_round = len(todo) - len(failed)
+                # But a run of bot checks means the address is in cooldown, and
+                # every further request is both certain to fail and liable to
+                # extend the block. Abandon the round and wait instead.
+                blocked_streak = blocked_streak + 1 if BLOCKED(bad["error"]) else 0
+                if blocked_streak >= args.abort_after:
+                    print(f"    {blocked_streak} bot checks in a row. Abandoning "
+                          f"this round rather than deepening the block.")
+                    aborted = True
+                    break
+            else:
+                blocked_streak = 0
+        got_this_round = (i if aborted else len(todo)) - len(failed)
         if not args.until_done:
             break
         stalled = stalled + 1 if got_this_round == 0 else 0
