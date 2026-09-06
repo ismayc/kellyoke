@@ -3,11 +3,15 @@
 # The repo is private, and GitHub Pages needs a paid plan for private repos,
 # so deployment goes through Netlify instead.
 #
-# This file covers both routes:
-#   - Netlify's own Git integration, which runs [build] on each push
-#   - .github/workflows/netlify.yml, which builds in CI and uploads the result
-# The Actions route is the one in use, so [build] here is a fallback that keeps
-# the two paths producing the same site.
+# The site is connected through Netlify's own Git integration, so Netlify runs
+# [build] below on each push to main. That command runs the data checks first,
+# which means a dataset that fails its own invariants fails the build instead of
+# reaching the site.
+#
+# An earlier .github/workflows/netlify.yml did this from CI instead, to avoid
+# giving Netlify read access to a private repo. It was removed once the Git
+# integration was connected, because two deploy paths for one site is a way to
+# ship the older of them.
 
 [build]
   publish = "_site"

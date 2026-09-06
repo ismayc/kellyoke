@@ -93,11 +93,16 @@ mid-sentence punctuation, while still allowing it to separate a list item from
 its gloss.
 
 Both pages deploy to [kellyokes.netlify.app](https://kellyokes.netlify.app) on
-every push that touches them, and the deploy runs the data checks first so a
-failing dataset never reaches the site. The repo is private, and GitHub Pages
-requires a paid plan for private repos, which is why this goes through Netlify.
-CI builds the site and uploads the finished directory, so Netlify never needs
-read access to the repo.
+every push to `main`, through Netlify's Git integration. GitHub Pages would need
+a paid plan for a private repo, which is why this goes through Netlify instead.
+The build command in `netlify.toml` runs `tools/check_data.py` before assembling
+the site, so a dataset that fails its own invariants fails the build rather than
+reaching the page.
+
+Netlify's Pretty URLs post-processing rewrites `explore.html` to `/explore` in
+the served HTML, which the redirect in `netlify.toml` resolves. The explorer's
+link back to the archive is relative everywhere except `claude.ai`, where the
+two pages are separate Artifacts with unrelated URLs.
 
 `tools/check_links.py` runs monthly. It asks YouTube's oEmbed endpoint whether
 each video still resolves and opens an issue listing any that have gone. Only a

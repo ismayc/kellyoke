@@ -267,9 +267,12 @@ td.who { white-space:nowrap; }
       D_VER=8,D_RERUN=9,D_VID=10,D_SRC=11,D_GEN=12,D_YEAR=13,D_VIEWS=14,D_DUR=15;
   var GENRES = __GENRES__, DECADES = __DECADES__;
 
-  // relative link locally, absolute when served from the artifact host
+  // The archive is a sibling file everywhere except the Claude artifact host,
+  // where the two pages are separate artifacts with unrelated URLs. So default
+  // to the relative link and keep the absolute one only on claude.ai. This
+  // covers file://, localhost, and kellyokes.netlify.app alike.
   var bl=document.getElementById('backlink');
-  if (location.protocol==='file:' || /^(127\\.|localhost)/.test(location.hostname)) {
+  if (!/(^|\\.)claude\\.ai$/.test(location.hostname)) {
     bl.setAttribute('href','index.html');
   }
 
