@@ -67,6 +67,25 @@ def parts_list(parts, label):
     return f'<ul class="rows" aria-label="{e(label)}">{"".join(out)}</ul>'
 
 
+def parts_grid(parts, label):
+    """The same parts as a wrapped grid of compact cells.
+
+    The whole archive arrives in 20 parts that differ only by number, so 20
+    full-width rows spent the entire first screen saying the same thing and
+    pushed the per-season playlists below the fold. Each cell keeps the ruled
+    top edge the rows use, so it reads as the same surface, only denser.
+    """
+    out = []
+    for p in parts:
+        out.append(
+            f'<li><a href="{e(p["url"])}" target="_blank" rel="noopener noreferrer" '
+            f'aria-label="Part {p["part"]} of {p["of"]}, {p["n"]} videos, '
+            f'open in YouTube">'
+            f'<span class="gn">Part {p["part"]}</span>'
+            f'<span class="gc">{p["n"]}</span></a></li>')
+    return f'<ul class="pgrid" aria-label="{e(label)}">{"".join(out)}</ul>'
+
+
 seasons_html = []
 for s, parts in sorted(pl["seasons"].items(), key=lambda kv: int(kv[0])):
     m = season_meta[int(s)]
@@ -148,6 +167,16 @@ a {{ color:inherit; }}
   font-size:30px; margin:0 0 4px; }}
 .whole p {{ margin:0 0 8px; font-size:14px; color:var(--ink-2); max-width:64ch; }}
 
+.pgrid {{ list-style:none; margin:2px 0 6px; padding:0; display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); column-gap:20px; }}
+.pgrid li {{ border-top:1px solid var(--rule-soft); }}
+.pgrid a {{ display:flex; align-items:baseline; justify-content:space-between;
+  gap:10px; padding:8px 0 9px; text-decoration:none; }}
+.pgrid a:hover {{ background:var(--panel-2); }}
+.pgrid a:hover .gn {{ color:var(--sung); }}
+.gn {{ font-size:15px; font-weight:700; }}
+.gc {{ font-size:13px; color:var(--unsung); }}
+
 .notes-foot {{ margin:60px 0 0; padding-top:26px; border-top:2px solid var(--ink); }}
 .notes-foot h2 {{ font-family:"Big Shoulders Display",Chivo,sans-serif; font-weight:700;
   font-size:30px; margin:0 0 14px; }}
@@ -174,8 +203,9 @@ a {{ color:inherit; }}
   <section class="whole">
     <h2>The whole archive</h2>
     <p>All {total_videos:,} clips in air-date order, from the September 2019 premiere
-      to the series finale, in {len(pl["all"])} parts.</p>
-    {parts_list(pl["all"], "Complete archive playlists")}
+      to the series finale, in {len(pl["all"])} parts. The number beside each part is
+      how many clips it holds.</p>
+    {parts_grid(pl["all"], "Complete archive playlists")}
   </section>
 
   {"".join(seasons_html)}
