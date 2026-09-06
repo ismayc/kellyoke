@@ -61,6 +61,33 @@ def clean_genres(gs):
 song_by_disp = {k: v for k, v in links["song_links"].items()}
 art_by_disp = {k: v for k, v in links["artist_links"].items()}
 
+
+def artist_candidates(artist):
+    """The credit as written, then the ways it might name a real article.
+
+    A credit is not always an article title. "Eve featuring Gwen Stefani" is a
+    billing, and "JP Saxe and Julia Michaels" is two people; neither has a page,
+    so an exact lookup found nothing and the genre came out blank. The full
+    string is tried first and always, because "Fitz & The Tantrums" and
+    "Aly & AJ" are band names that splitting would destroy.
+
+    Falling back to one half of a collaboration is a deliberate approximation:
+    the genre of the lead credit is a better guess for the song than no genre
+    at all, and every family here is broad enough to survive it.
+    """
+    artist = (artist or "").strip()
+    if not artist:
+        return []
+    out = [artist]
+    lead = re.split(r"\s+(?:featuring|feat\.?|ft\.?|with)\s+", artist, flags=re.I)[0].strip()
+    if lead and lead != artist:
+        out.append(lead)
+    for part in re.split(r"\s*(?:&|\band\b)\s*", lead, flags=re.I):
+        part = part.strip()
+        if part and part not in out:
+            out.append(part)
+    return out
+
 # ---- view counts from whatever dump holds each video --------------------
 views, durs = {}, {}
 for fn in ("channel_videos.jsonl", "playlist_videos.jsonl", "kcvideos.jsonl",
@@ -100,10 +127,13 @@ for r in rows:
         year = sm["year"] if sm else None
         src = "song" if genres else ""
         if not genres:
-            am = meta["artist"].get(art_by_disp.get((p["artist"] or "").lower(), ""))
-            if am:
-                genres = clean_genres(am["genres"])
-                src = "artist" if genres else ""
+            for cand in artist_candidates(p["artist"] or ""):
+                am = meta["artist"].get(art_by_disp.get(cand.lower(), ""))
+                if am:
+                    genres = clean_genres(am["genres"])
+                    if genres:
+                        src = "artist"
+                        break
         fam = family(genres[0]) if genres else ""
         if not fam:
             for g in genres[1:]:
