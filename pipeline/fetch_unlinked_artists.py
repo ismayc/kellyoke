@@ -47,7 +47,8 @@ NOT_A_MUSICIAN = re.compile(r"^(film|album|single|song|television|book|"
 
 
 JUNK = re.compile(r"^(cite|ref|http|www|isbn|p\.|pp\.|\d+)"
-                  r"|^(hlist|flatlist|ubl|plainlist|unbulleted list|div col)$", re.I)
+                  r"|^(hlist|flat ?list|ubl|plain ?list|unbulleted list"
+                  r"|bulleted list|div col)$", re.I)
 
 
 def first_infobox(wt):
@@ -121,7 +122,11 @@ def genre_list(raw):
         return []
     t = re.sub(r"<ref[^>]*/>|<ref.*?</ref>", " ", raw, flags=re.S)
     t = re.sub(r"<!--.*?-->", " ", t, flags=re.S)
-    t = re.sub(r"\{\{\s*(hlist|flatlist|ubl|unbulleted list|plainlist)\s*\|", "", t, flags=re.I)
+    # Keep this alias list identical to fetch_meta.py's. "flat list" with the
+    # space is a real spelling on Wikipedia, and missing an alias here silently
+    # empties the whole genre field rather than degrading it.
+    t = re.sub(r"\{\{\s*(hlist|flat ?list|ubl|unbulleted list|plain ?list"
+               r"|bulleted list)\s*\|", "", t, flags=re.I)
     t = re.sub(r"\[\[([^\[\]|]*)\|([^\[\]]*)\]\]", r"\2", t)
     t = re.sub(r"\[\[([^\[\]]*)\]\]", r"\1", t)
     t = re.sub(r"\{\{[^{}]*\}\}", " ", t)

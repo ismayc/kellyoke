@@ -13,7 +13,8 @@ meta = json.load(open(os.path.join(S, "wiki_meta.json")))
 links = json.load(open(os.path.join(S, "links.json")))
 
 JUNK = re.compile(r"^(cite|ref|http|www|isbn|p\.|pp\.|\d+)"
-                  r"|^(hlist|flatlist|ubl|plainlist|unbulleted list|div col)$", re.I)
+                  r"|^(hlist|flat ?list|ubl|plain ?list|unbulleted list"
+                  r"|bulleted list|div col)$", re.I)
 
 # ordered rules: first match wins, so "pop rock" lands in Rock and
 # "country pop" in Country, which is how each is normally filed
@@ -35,7 +36,10 @@ FAMILY = [
     ("Electronic",      r"disco|house|techno|\bedm\b|electronic|dance|trance|electro|synth|club|garage"),
     ("Jazz / Blues",    r"jazz|blues|swing|ragtime|big band|lounge|standard|torch song|vocal"),
     ("Folk",            r"folk|singer.?songwriter|celtic|bluesy folk|traditional"),
-    ("Classical",       r"classical|opera|aria|orchestral|baroque|choral|hymn|light music|^light$|easy listening"),
+    # \baria\b, not bare "aria": unanchored it also matches inside Bulgaria,
+    # vegetarianism and ARIA Award. No infobox genre string in the cache has
+    # ever tripped that, but the rules are fed free text below, where it does.
+    ("Classical",       r"classical|opera|\baria\b|orchestral|baroque|choral|hymn|light music|^light$|easy listening"),
 ]
 
 
@@ -45,6 +49,50 @@ def family(g):
         if re.search(pat, g):
             return name
     return ""
+
+
+# Wikipedia categories, used only when no infobox genre exists anywhere. These
+# are deliberately NOT the FAMILY rules: those assume a short genre string, and
+# a category is a free-text sentence. Running FAMILY over categories files
+# "Number-one singles in Bulgaria" and "American vegetarianism activists" under
+# Classical (both contain "aria"), and sends every artist in "African-American
+# male singer-songwriters" to Folk, which is how Durand Bernarr and Olivia Dean
+# both came out wrong in testing. So: an explicit allowlist, phrases only.
+#
+# Order settles the pages that carry two at once. "America the Beautiful" is in
+# both "American patriotic songs" and "American Christian hymns"; patriotic is
+# the one that describes the song, so it is listed first. "What It Sounds Like"
+# is in both "K-pop songs" and "Songs from KPop Demon Hunters", and k-pop wins
+# for the same reason "Golden" files under World.
+CATEGORY_FAMILY = [
+    ("Patriotic",       r"\bpatriotic songs\b|\bnational anthems?\b"),
+    ("Christmas",       r"\bchristmas (songs|carols|music)\b"),
+    ("World",           r"\bk-?pop songs\b|\bsouth korean pop songs\b"),
+    # "Songs from <work>" is the giveaway that a song belongs to a named show
+    # or film: "Songs from Anything Goes" is what identifies "I Get a Kick Out
+    # of You", whose infobox genre is an editor's comment telling people not to
+    # add one.
+    ("Musical theatre", r"\bshow tunes\b|\bsongs from \b|\bbroadway\b"
+                        r"|\bsongs written for animated films\b|\bpixar songs\b"
+                        r"|\bdisney songs\b"),
+    ("Jazz / Blues",    r"\bjazz standards\b|\bjazz songs\b|\bblues songs\b"),
+    ("Gospel",          r"\bchristian hymns\b|\bgospel songs\b|\bhymns\b"),
+    ("Country",         r"\bcountry songs\b|\bcountry ballads\b"),
+]
+
+
+def family_from_cats(cats):
+    """First allowlisted category on the page, as (family, category) or ('','').
+
+    The allowlist is scanned in order, not the category list, so precedence is
+    the one declared above rather than whatever order Wikipedia happens to
+    return the page's categories in.
+    """
+    for name, pat in CATEGORY_FAMILY:
+        for c in cats or []:
+            if re.search(pat, c, re.I):
+                return name, c
+    return "", ""
 
 
 def clean_genres(gs):
@@ -60,6 +108,18 @@ def clean_genres(gs):
 
 song_by_disp = {k: v for k, v in links["song_links"].items()}
 art_by_disp = {k: v for k, v in links["artist_links"].items()}
+
+
+# Genre strings that BEAT the articles, keyed on (song, artist). HAND_GENRE
+# below only fills a gap; this one wins outright, so it stays tiny and every
+# entry carries its reason. Keyed on both fields because a title alone
+# cross-links different songs that happen to share a name.
+FORCE_GENRE = {
+    # The song article lists only "Dance-pop", which outranks Gloria Estefan's
+    # own Latin pop and takes Latin from 3 songs down to 2. Held where it was
+    # pending Chester's ruling. Delete this entry to let it move to Pop.
+    ("1-2-3", "Gloria Estefan & Miami Sound Machine"): ["Latin pop"],
+}
 
 
 # Songs the wiki listed with no artist to look up, identified from the clip
@@ -153,9 +213,12 @@ for r in rows:
         disp = p["song"].lower()
         sart = song_by_disp.get(disp)
         sm = meta["song"].get(sart) if sart else None
-        genres = clean_genres(sm["genres"]) if sm else []
         year = sm["year"] if sm else None
-        src = "song" if genres else ""
+        genres = FORCE_GENRE.get((p["song"], p.get("artist") or ""), [])
+        src = "forced" if genres else ""
+        if not genres:
+            genres = clean_genres(sm["genres"]) if sm else []
+            src = "song" if genres else ""
         if not genres:
             for cand in artist_candidates(p["artist"] or ""):
                 am = meta["artist"].get(art_by_disp.get(cand.lower(), ""))
@@ -174,6 +237,20 @@ for r in rows:
                 fam = family(g)
                 if fam:
                     break
+        # Last resort, and only ever a last resort: the page's categories. This
+        # runs after every genre source above has come up empty, so it can fill
+        # a blank but can never overrule a genre an infobox actually stated.
+        # The SONG's categories only. An artist's categories describe a career,
+        # not this song: Johnny Mercer is in "Broadway composers and lyricists",
+        # which filed "Come Rain or Come Shine" under Musical theatre and beat
+        # the song's own "1940s jazz standards". Artist categories contributed
+        # exactly one classification in testing and it was that wrong one.
+        cat_used = ""
+        if not fam:
+            fam, cat_used = family_from_cats((sm or {}).get("cats"))
+            if fam:
+                src = "category"
+        p["genre_cat"] = cat_used
         p["genres"] = genres[:4]
         p["genre"] = fam or "Not listed"
         p["genre_src"] = src
