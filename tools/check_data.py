@@ -135,6 +135,31 @@ def main():
         check(f"{name}: no unexpanded '{{{{'", b"{{" not in raw)
         check(f"{name}: non-trivial size", len(raw) > 50_000, f"{len(raw)} bytes")
 
+    print("\nshare card")
+    og = ROOT / "og-image.png"
+    check("og-image.png exists", og.exists())
+    if og.exists():
+        raw = og.read_bytes()
+        # PNG: 8-byte signature, 4-byte chunk length, "IHDR", then width, height
+        sig_ok = raw[:8] == b"\x89PNG\r\n\x1a\n" and raw[12:16] == b"IHDR"
+        check("og-image.png is a PNG", sig_ok)
+        if sig_ok:
+            w = int.from_bytes(raw[16:20], "big")
+            h = int.from_bytes(raw[20:24], "big")
+            check("og-image.png is 1200x630", (w, h) == (1200, 630), f"got {w}x{h}")
+        # most platforms refuse to fetch a card over about 5 MB
+        check("og-image.png under 5 MB", len(raw) < 5_000_000,
+              f"{len(raw) / 1024:.0f} KB")
+
+    for name in ("index.html", "explore.html"):
+        page = (ROOT / name).read_text(encoding="utf-8")
+        head = page[:4000]
+        for tag in ("og:title", "og:image", "og:url", "twitter:card"):
+            check(f"{name}: declares {tag}", tag in head,
+                  "missing, or pushed out of the implied <head> by earlier content")
+        check(f"{name}: og:image is an absolute URL",
+              'content="https://kellyokes.netlify.app/og-image.png"' in head)
+
     print("\nREADME numbers agree with the data")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     genre = Counter(r["genre"] for r in rows)

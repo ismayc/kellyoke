@@ -164,6 +164,17 @@ TOKENS_CSS = TOKENS.replace("{{", "{").replace("}}", "}")
 
 HTML = f"""<meta charset="utf-8">
 <title>The Kellyoke Archive</title>
+<meta name="description" content="Every cover Kelly Clarkson opened The Kelly Clarkson Show with, from the 2019 premiere to the 2026 finale, in air-date order and linked to the best surviving copy.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Kellyoke Archive">
+<meta property="og:url" content="https://kellyokes.netlify.app/">
+<meta property="og:title" content="Every song she opened with">
+<meta property="og:description" content="Seven years of opening covers from The Kelly Clarkson Show, in air-date order and linked to the best surviving copy.">
+<meta property="og:image" content="https://kellyokes.netlify.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Every song she opened with. The Kelly Clarkson Show, 2019 to 2026.">
+<meta name="twitter:card" content="summary_large_image">
 {FONTS}
 <style>{TOKENS_CSS}
 .page {{ max-width:1000px; margin:0 auto; padding:0 22px 80px; }}

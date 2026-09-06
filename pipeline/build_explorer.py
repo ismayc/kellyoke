@@ -48,6 +48,17 @@ ARCHIVE_URL = "https://claude.ai/code/artifact/5e11c4ba-11e2-4128-a1ad-31af1f13a
 
 HTML = """<meta charset="utf-8">
 <title>Kellyoke Data Explorer</title>
+<meta name="description" content="Filter, sort and chart every Kellyoke performance by season, genre, decade and performer.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Kellyoke Archive">
+<meta property="og:url" content="https://kellyokes.netlify.app/explore">
+<meta property="og:title" content="Kellyoke Data Explorer">
+<meta property="og:description" content="Filter, sort and chart every Kellyoke performance by season, genre, decade and performer.">
+<meta property="og:image" content="https://kellyokes.netlify.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Every song she opened with. The Kelly Clarkson Show, 2019 to 2026.">
+<meta name="twitter:card" content="summary_large_image">
 __FONTS__
 <style>__TOKENS__
 .wrap { max-width:1200px; margin:0 auto; padding:0 22px 70px; }

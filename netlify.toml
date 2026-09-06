@@ -18,7 +18,7 @@
   command = """
     python3 tools/check_data.py && \
     mkdir -p _site && \
-    cp index.html explore.html performances.csv PLAYLISTS.md _site/
+    cp index.html explore.html performances.csv PLAYLISTS.md og-image.png _site/
   """
 
 [build.environment]
