@@ -39,7 +39,9 @@ single Latin track.
 
 - **Songs, air dates, episode numbers** — parsed from the wikitext of the seven
   Wikipedia season articles, which log the Kellyoke for 1,232 of the 1,233
-  episodes (November 1, 2019 is listed as N/A). The
+  episodes (November 1, 2019 is listed as N/A: that morning she sang five
+  shortened songs of her own, closing on *Invincible*, to announce the Las
+  Vegas residency of the same name. None of them was a cover). The
   episode count reconciles exactly with the number each article declares.
 - **Genre and original release year** — from each song's own Wikipedia infobox,
   falling back to the artist's infobox when the song has no article.
