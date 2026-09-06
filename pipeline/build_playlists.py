@@ -42,6 +42,15 @@ for s, eps in by_season.items():
 
 total_videos = sum(p["n"] for p in pl["all"])
 
+# A queue holds distinct clips, so it is always smaller than the number of
+# performances: a song she sang on several mornings with only one surviving clip
+# contributes once. Stating only the clip count reads as "that is all there is",
+# so both numbers belong on the page.
+kelly = [(r, p) for r in rows if not r["cameo"] for p in r["perfs"]]
+n_kelly = len(kelly)
+n_covered = sum(1 for _, p in kelly if p["video_id"])
+n_reused = n_covered - total_videos
+
 
 def parts_list(parts, label):
     """One row per playlist part: what it holds, and a link that opens it."""
@@ -155,15 +164,17 @@ a {{ color:inherit; }}
   {nav("playlists.html")}
   <header class="hero">
     <h1>Playlists</h1>
-    <p class="sub">Every Kellyoke that still has a copy online, queued up and ready to
-      play: <b>{total_videos:,} videos</b> by season, or the whole run end to end.
+    <p class="sub"><b>{total_videos:,} clips</b> covering {n_covered:,} of Kelly's
+      {n_kelly:,} opening covers, by season or the whole run end to end. The counts
+      differ because a clip appears once: {n_reused} of those mornings are reruns,
+      medleys, or a song she came back to where only one recording survives.
       Each link opens straight in YouTube, no account needed.</p>
   </header>
 
   <section class="whole">
     <h2>The whole archive</h2>
-    <p>All {total_videos:,} in air-date order, from the September 2019 premiere to the
-      series finale, in {len(pl["all"])} parts.</p>
+    <p>All {total_videos:,} clips in air-date order, from the September 2019 premiere
+      to the series finale, in {len(pl["all"])} parts.</p>
     {parts_list(pl["all"], "Complete archive playlists")}
   </section>
 
@@ -175,9 +186,16 @@ a {{ color:inherit; }}
       builds a temporary queue from the video ids in the URL, so nothing needs an
       account and nothing is stored anywhere. It accepts at most 50 ids at a time,
       which is the only reason a season arrives in parts rather than one link.</p>
+    <p><b>Why {total_videos:,} and not {n_kelly:,}?</b> A queue holds each clip once.
+      Kelly opened {n_kelly:,} mornings and {n_covered:,} of those have a surviving
+      recording, but {n_reused} of them point at a clip that is already in the queue:
+      she covered the song again on a later morning and only one recording was ever
+      posted, or the episode was a rerun, or a single medley clip covers several songs
+      at once. One recording of <i>You Lie</i> stands in for four separate mornings.
+      The <a class="play" href="index.html" data-rel="index.html">archive</a> lists all
+      {n_kelly:,} with the clip for each. Guest turns are not queued here at all.</p>
     <p>A part will occasionally play short. These point at fan-uploaded copies, and
-      when one is taken down the queue simply skips it. The
-      <a class="play" href="index.html" data-rel="index.html">archive</a> always has the
+      when one is taken down the queue simply skips it. The archive always has the
       current link for a given morning.</p>
   </footer>
 </div>
