@@ -10,9 +10,9 @@ links are confirmed** against the air date stated in the clip's own YouTube
 description rather than inferred from its title.
 
 The songs she reached for span **1818 to 2026** across **19 genre families**:
-376 pop, 306 rock, 212 country, 178 R&B and soul, and a long tail down to
+375 pop, 307 rock, 212 country, 179 R&B and soul, and a long tail down to
 two Latin tracks and a single patriotic one. **Every entry has a genre**, and
-1,200 of 1,245 have an original release year.
+1,223 of 1,245 have an original release year.
 
 ## Files
 
@@ -48,9 +48,10 @@ Harold Arlen and Johnny Mercer in 1941, and 1941 is what the column holds.
 
 | source | rows | how |
 |---|---|---|
-| `infobox` | 1,001 | the song article's release date |
-| `musicbrainz` | 172 | the earliest release across every recording of the song's MusicBrainz work |
+| `infobox` | 1,003 | the song article's release date |
+| `musicbrainz` | 175 | the earliest release across every recording of the song's MusicBrainz work |
 | `category` | 26 | a "1962 songs" category |
+| `hand` | 18 | entered one at a time, each with its provenance in `HAND_YEAR`: seven read off Discogs, the rest looked up in MusicBrainz under the credit the clip title names |
 | `credit fix` | 1 | a hand correction where the wikitext named the wrong song |
 
 Two limits are worth knowing before leaning on the column. MusicBrainz coverage
@@ -77,9 +78,10 @@ Måneskin version.
   episode count reconciles exactly with the number each article declares.
 - **Genre and original release year** — from each song's own Wikipedia infobox,
   falling back to the artist's infobox, then to the song article's categories,
-  then to MusicBrainz for songs Wikipedia has no article for at all. The song
-  article is chosen by song **and** artist: three different songs called
-  "Dreams" appear here, and a title alone picks whichever was written last.
+  then to MusicBrainz for songs Wikipedia has no article for at all, and last to
+  18 years entered by hand. The song article is chosen by song **and** artist:
+  three different songs called "Dreams" appear here, and a title alone picks
+  whichever was written last.
 - **Videos** — matched by title and artist against a full index of the show's
   YouTube channel (its video tab plus all 97 playlists) and three fan archives
   that mirror the segment.
@@ -101,6 +103,16 @@ Måneskin version.
   infobox anywhere, were classified by hand in September 2026 and are listed
   one by one in `HAND_GENRE` in `pipeline/enrich.py`, keyed on song and artist
   with the reasoning kept alongside.
+- 22 entries have no release year, and not all for the same reason. Two are
+  medleys with no single year to give (*Classic Television theme songs*,
+  *Step by Step/Whatta Man/Hangin' Tough*). Three name no artist and nothing
+  identifies the source, so there is nothing to look up (*Dance With Me*,
+  *One Good Thing*, *I'd Be Lyin'*). One, *Salt Water*, is held back by a
+  disagreement rather than a gap: the wikitext credits Raveena Aurora and the
+  clip title names María Isabel, and nothing to hand settles which. The rest are
+  recent releases by independent artists, missed by Wikipedia, MusicBrainz and
+  Discogs alike, which is a limit of those three sources and not evidence that
+  no source has them.
 - Where a song came back on a later morning and only one clip survives, every
   date points at that clip. This covers 122 entries, and each one is labeled:
   either the clip states an air date belonging to another night on which the

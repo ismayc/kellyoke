@@ -154,10 +154,32 @@ song_by_pair = {tuple(k.split("\t", 1)): v
                 for k, v in (links.get("song_pairs") or {}).items()}
 
 
+def punct(s):
+    """Fold typographic variants of the same character.
+
+    Not a looser match: a curly apostrophe and a straight one are the same
+    character set differently, so this settles a spelling question rather than
+    widening the net. It matters because the two sides come from different
+    places. The wikitext link for Billie Eilish's song carries U+2019, as
+    "i don't wanna be you anymore", while the song column carries U+0027, so
+    the pair never met and a cached article with the year sat unused.
+    """
+    for a, b in (("’", "'"), ("‘", "'"),
+                 ("“", '"'), ("”", '"'),
+                 ("–", "-"), ("—", "-")):
+        s = s.replace(a, b)
+    return s
+
+
+song_by_pair = {(punct(a), punct(b)): v for (a, b), v in song_by_pair.items()}
+song_by_disp = {punct(k): v for k, v in song_by_disp.items()}
+
+
 def song_article(song, artist):
     """The article for this performance, artist first, title only as fallback."""
-    hit = song_by_pair.get((song.lower(), (artist or "").strip().lower()))
-    return hit or song_by_disp.get(song.lower())
+    s = punct(song.lower())
+    hit = song_by_pair.get((s, punct((artist or "").strip().lower())))
+    return hit or song_by_disp.get(s)
 
 
 # Entries where the season wikitext credits the wrong work entirely, keyed on
@@ -182,6 +204,73 @@ CREDIT_FIX = {
 # verify_dates.py has the same shape of trap for a different reason.
 CREDIT_FIX = {**CREDIT_FIX,
               **{(song, v["artist"]): v for (song, _), v in CREDIT_FIX.items()}}
+
+
+# One song the wikitext spelled two ways on two mornings, so the second airing
+# missed everything the first had resolved. Each of these was confirmed by the
+# clip titles being identical across the pair, not by string similarity alone:
+# both "Steppin'n On Me" and "Steppin' On Me" link a clip called
+# "Kellyoke | Steppin' On Me (Fitz and the Tantrums)".
+#
+# Resolution only. The displayed song and artist keep whatever the wikitext
+# said, because the archive records what the show listed. This maps the variant
+# to its twin for looking up an article, a MusicBrainz credit and a hand genre,
+# which is enough to give the second airing the year and genre the first one
+# already has. "Damn I Was Your Lover" was filed Jazz / Blues on its own while
+# the identical performance six months earlier was Rock.
+SAME_SONG = {
+    ("Steppin'n On Me", "Fitz and The Tantrums"):
+        ("Steppin' On Me", "Fitz & The Tantrums"),
+    ("For Crying Out Loud", "Finneas"):
+        ("For Cryin' Out Loud", "Finneas"),
+    ("Damn I Was Your Lover", "Sophie B. Hawkins"):
+        ("Damn I Wish I Was Your Lover", "Sophie B. Hawkins"),
+    ("Cut!", "Maren Morris featuring Julia Michaels"):
+        ("Cut!", "Maren Morris & Julia Michaels"),
+}
+
+
+# Years the pipeline cannot reach on its own, entered by hand on September 7,
+# 2026 and checked one at a time. Two kinds, and the provenance is per entry.
+#
+# The first block was read off Discogs. Discogs is deliberately not wired into
+# the pipeline: its search dates a pressing rather than a song, and its track
+# index is incomplete even for releases it holds, which is how "Sweet December"
+# came back as a 2024 re-recording when the song is on Glow in 2016. A source
+# whose every answer has to be checked belongs in a table, not in a fallback.
+#
+# The second block is the opposite problem. The year was reachable all along,
+# but the wikitext gave no artist to look it up with, or gave a credit that
+# named the collaboration rather than the act MusicBrainz files the song under.
+# The show's own clip title names the source in each case, which is the standing
+# way this archive identifies what the wikitext left out. The year beside each
+# is what fetch_musicbrainz.lookup() returned once asked under that credit, so
+# every one is reproducible rather than asserted.
+HAND_YEAR = {
+    # from Discogs
+    ("Keep Walkin' On", "Faith Hill featuring Shelby Lynne"): 1995,   # It Matters to Me
+    ("Gimme Some Money", "Spinal Tap"): 1984,                         # This Is Spinal Tap
+    ("Dance Around It", "Lucius featuring Brandi Carlile and Sheryl Crow"): 2022,  # Second Nature
+    ("Wild", "John Legend feat. Gary Clark Jr"): 2020,                # Bigger Love
+    ("Go Home W U", "Keith Urban & Lainey Wilson"): 2024,             # single
+    ("SANTA (Crush on You)", "Thalía"): 2025,                         # single
+    ("Sweet December", "Brett Eldredge & Kelly Clarkson"): 2016,      # Glow, not the 2024 re-cut
+
+    # from MusicBrainz, looked up under the credit the clip title names
+    ("I Would Have Loved You", ""): 2021,     # "I Would've Loved You" / Jake Hoot
+    ("Golden", ""): 2025,                     # HUNTR/X, from KPop Demon Hunters
+    ("Sisters", ""): 1954,                    # White Christmas; the work, not Clooney's 1997
+    ("Piece by Piece", ""): 2015,             # Kelly Clarkson, sung on the finale
+    ("Sober", ""): 2007,                      # Kelly Clarkson, My December
+    ("People Like Us", ""): 2012,             # Kelly Clarkson
+    ("It's Just Raining", "Avery Anna"): 2024,                     # "it's just rainin'"
+    ("In My Head", "Gryffin with Kaskade featuring Nu-La"): 2025,   # filed under Gryffin
+
+    # Chester's call, September 7, 2026: the song's first release is the 1982
+    # off-Broadway cast recording, not the 1986 film soundtrack that MusicBrainz
+    # returns for the Ellen Greene credit.
+    ("Suddenly Seymour", "Lee Wilkof & Ellen Greene"): 1982,
+}
 
 
 # Genres no article could supply, keyed on (song, artist) because a title alone
@@ -332,7 +421,13 @@ for r in rows:
         fix = CREDIT_FIX.get((p["song"], p.get("artist") or ""))
         if fix:
             p["artist"] = fix["artist"]
-        sart = song_article(p["song"], p.get("artist"))
+        # The title this performance resolves under, which is the twin's title
+        # when the wikitext spelled the same song two ways. Displayed values are
+        # untouched; only the lookups below use these.
+        rsong, rartist = SAME_SONG.get(
+            (p["song"], p.get("artist") or ""),
+            (p["song"], (p.get("artist") or "").strip()))
+        sart = song_article(rsong, rartist)
         sm = meta["song"].get(sart) if sart else None
         year = sm["year"] if sm else None
         year_src = "infobox" if year else ""
@@ -340,8 +435,11 @@ for r in rows:
             year = year_from_cats(sm.get("cats"))
             year_src = "category" if year else ""
         if not year:
-            year = MB_YEAR.get((p["song"], (p.get("artist") or "").strip()))
+            year = MB_YEAR.get((rsong, rartist))
             year_src = "musicbrainz" if year else year_src
+        if not year:
+            year = HAND_YEAR.get((rsong, rartist))
+            year_src = "hand" if year else year_src
         p["writers"] = (sm.get("writers") or [])[:4] if sm else []
         p["album"] = (sm.get("album") or "") if sm else ""
         p["orig_seconds"] = sm.get("seconds") if sm else None
