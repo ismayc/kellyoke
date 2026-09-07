@@ -9,9 +9,10 @@ Cameo-oke). All 1,178 of Kelly's 1,178 are linked to a video, and **898 of those
 links are confirmed** against the air date stated in the clip's own YouTube
 description rather than inferred from its title.
 
-The songs she reached for span **1930 to 2025** across **19 genre families**:
-383 pop, 304 rock, 212 country, 176 R&B and soul, and a long tail down to
-two Latin tracks and a single patriotic one. **Every entry has a genre.**
+The songs she reached for span **1818 to 2026** across **19 genre families**:
+376 pop, 306 rock, 212 country, 178 R&B and soul, and a long tail down to
+two Latin tracks and a single patriotic one. **Every entry has a genre**, and
+1,198 of 1,245 have an original release year.
 
 ## Files
 
@@ -27,10 +28,31 @@ two Latin tracks and a single patriotic one. **Every entry has a genre.**
 ## Columns in `performances.csv`
 
 `air_date`, `season`, `episode_overall`, `episode_in_season`, `song`,
-`original_artist`, `genre`, `original_release_year`, `years_since_release`,
+`original_artist`, `genre`, `original_release_year`, `release_year_source`,
+`songwriters`, `original_album`, `original_seconds`, `years_since_release`,
 `performed_by`, `is_cameo`, `duet_with`, `version_covered`, `rerun`,
 `video_id`, `video_url`, `video_source`, `video_title`, `video_views`,
 `video_seconds`
+
+`songwriters` (76% filled), `original_album` (75%) and `original_seconds` (80%)
+all come from the song's Wikipedia infobox. `original_seconds` is the original
+recording's length, so pairing it with `video_seconds` shows how much of a song
+a Kellyoke actually keeps. `songwriters` falls back to the `composer` and
+`lyricist` fields, which is where pre-rock standards put the credit.
+
+`release_year_source` says where each year came from, because they do not all
+mean quite the same thing:
+
+| source | rows | meaning |
+|---|---|---|
+| `infobox` | 1,001 | the song article's release date |
+| `musicbrainz` | 170 | **the credited artist's recording**, not necessarily the song's first release |
+| `category` | 26 | a "1962 songs" category, so the composition year |
+| `credit fix` | 1 | a hand correction where the wikitext named the wrong song |
+
+The `musicbrainz` distinction matters for standards: "Blues in the Night" is
+credited here to Ella Fitzgerald and dated 1961, her recording, though the song
+was written in 1941. Filter on this column if you need one consistent meaning.
 
 `version_covered` records the arrangement she sang when it wasn't the original:
 "Beggin'" is credited to The Four Seasons, but she did the Måneskin version.
@@ -44,7 +66,10 @@ two Latin tracks and a single patriotic one. **Every entry has a genre.**
   Vegas residency of the same name. None of them was a cover). The
   episode count reconciles exactly with the number each article declares.
 - **Genre and original release year** — from each song's own Wikipedia infobox,
-  falling back to the artist's infobox when the song has no article.
+  falling back to the artist's infobox, then to the song article's categories,
+  then to MusicBrainz for songs Wikipedia has no article for at all. The song
+  article is chosen by song **and** artist: three different songs called
+  "Dreams" appear here, and a title alone picks whichever was written last.
 - **Videos** — matched by title and artist against a full index of the show's
   YouTube channel (its video tab plus all 97 playlists) and three fan archives
   that mirror the segment.

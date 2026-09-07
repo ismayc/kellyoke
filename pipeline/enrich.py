@@ -92,6 +92,22 @@ CATEGORY_FAMILY = [
 ]
 
 
+# "1982 songs" and "2017 singles" are near-universal on song articles and are
+# often present when the infobox states no release date. Safe to read only
+# because song_by_pair now resolves to the right article: on a shared title this
+# would have handed one song another's year.
+CAT_YEAR = re.compile(r"^(1[5-9]\d{2}|20\d{2}) (songs|singles)$", re.I)
+
+
+def year_from_cats(cats):
+    """Earliest year named by a "<year> songs/singles" category, or None. The
+    earliest, because a song reissued as a single carries both its composition
+    year and the later chart year, and the original release is what this
+    archive means by orig_year."""
+    yrs = [int(m.group(1)) for c in cats or [] if (m := CAT_YEAR.match(c))]
+    return min(yrs) if yrs else None
+
+
 def family_from_cats(cats):
     """First allowlisted category on the page, as (family, category) or ('','').
 
@@ -117,8 +133,31 @@ def clean_genres(gs):
     return out
 
 
+# Years for songs with no Wikipedia article at all, from fetch_musicbrainz.py.
+# Optional: the file only exists once that script has been run, and it is read
+# as the last fallback so it can never displace a year Wikipedia stated.
+mb_p = os.path.join(S, "mb_meta.json")
+MB_YEAR = {}
+if os.path.exists(mb_p):
+    for k, v in json.load(open(mb_p)).items():
+        if v.get("year"):
+            song, _, artist = k.partition("\t")
+            MB_YEAR[(song, artist)] = v["year"]
+
 song_by_disp = {k: v for k, v in links["song_links"].items()}
 art_by_disp = {k: v for k, v in links["artist_links"].items()}
+# (song, artist) -> article. Prefer this over song_by_disp: a title alone picks
+# whichever article was written last, so "Dreams" sent Fleetwood Mac and The
+# Cranberries to Beck's article, and "Home" sent Edward Sharpe and Marc
+# Broussard to Michael Buble's.
+song_by_pair = {tuple(k.split("\t", 1)): v
+                for k, v in (links.get("song_pairs") or {}).items()}
+
+
+def song_article(song, artist):
+    """The article for this performance, artist first, title only as fallback."""
+    hit = song_by_pair.get((song.lower(), (artist or "").strip().lower()))
+    return hit or song_by_disp.get(song.lower())
 
 
 # Entries where the season wikitext credits the wrong work entirely, keyed on
@@ -136,6 +175,13 @@ CREDIT_FIX = {
         "year": 2010,
     },
 }
+
+# enrich.py writes matched.json back with the corrected credit, so on the next
+# run the key above no longer matches its own output and the fix silently stops
+# applying. Accept the corrected artist as well, which makes it idempotent.
+# verify_dates.py has the same shape of trap for a different reason.
+CREDIT_FIX = {**CREDIT_FIX,
+              **{(song, v["artist"]): v for (song, _), v in CREDIT_FIX.items()}}
 
 
 # Genres no article could supply, keyed on (song, artist) because a title alone
@@ -286,14 +332,24 @@ for r in rows:
         fix = CREDIT_FIX.get((p["song"], p.get("artist") or ""))
         if fix:
             p["artist"] = fix["artist"]
-        disp = p["song"].lower()
-        sart = song_by_disp.get(disp)
+        sart = song_article(p["song"], p.get("artist"))
         sm = meta["song"].get(sart) if sart else None
         year = sm["year"] if sm else None
+        year_src = "infobox" if year else ""
+        if not year and sm:
+            year = year_from_cats(sm.get("cats"))
+            year_src = "category" if year else ""
+        if not year:
+            year = MB_YEAR.get((p["song"], (p.get("artist") or "").strip()))
+            year_src = "musicbrainz" if year else year_src
+        p["writers"] = (sm.get("writers") or [])[:4] if sm else []
+        p["album"] = (sm.get("album") or "") if sm else ""
+        p["orig_seconds"] = sm.get("seconds") if sm else None
         genres = []
         src = ""
         if fix:
             genres, year, src = list(fix["genres"]), fix["year"], "credit fix"
+            year_src = "credit fix"
         if not genres:
             genres = clean_genres(sm["genres"]) if sm else []
             src = "song" if genres else ""
@@ -333,6 +389,7 @@ for r in rows:
         p["genre"] = fam or "Not listed"
         p["genre_src"] = src
         p["orig_year"] = year
+        p["year_src"] = year_src
         p["decade"] = (year // 10 * 10) if year else None
         p["age_at_cover"] = (yr - year) if year and year <= yr else None
         # performance-level duet: episode note, then the video title, then a known fix

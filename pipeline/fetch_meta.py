@@ -16,6 +16,13 @@ S = os.path.dirname(os.path.abspath(__file__))
 API = "https://en.wikipedia.org/w/api.php"
 UA = "KellyokeResearch/1.0 (https://github.com/ismayc/kellyoke)"
 
+# Same list enrich.py filters genres on. A field written {{hlist |a |b}} can
+# leak the template name through as the first value, which is not wrong so much
+# as meaningless, and it would sort ahead of the real one.
+JUNK = re.compile(r"^(cite|ref|http|www|isbn|p\.|pp\.|\d+)"
+                  r"|^(hlist|flat ?list|ubl|plain ?list|unbulleted list"
+                  r"|bulleted list|div col)$", re.I)
+
 
 def get(params):
     params = dict(params, format="json", formatversion="2")
@@ -150,6 +157,72 @@ def genre_list(raw):
     return out
 
 
+def plain(raw):
+    """An infobox value as readable text: links unwrapped, refs, templates and
+    markup removed. Shared by the album field and the people fields below."""
+    if not raw:
+        return ""
+    t = re.sub(r"<ref[^>]*/>|<ref.*?</ref>", " ", raw, flags=re.S)
+    t = re.sub(r"<!--.*?-->", " ", t, flags=re.S)
+    t = re.sub(r"\{\{\s*(hlist|flat ?list|ubl|unbulleted list|plain ?list"
+               r"|bulleted list)\s*\|", "", t, flags=re.I)
+    t = re.sub(r"\[\[([^\[\]|]*)\|([^\[\]]*)\]\]", r"\2", t)
+    t = re.sub(r"\[\[([^\[\]]*)\]\]", r"\1", t)
+    t = re.sub(r"\{\{[^{}]*\}\}", " ", t)
+    t = re.sub(r"<[^>]+>", " ", t)
+    return re.sub(r"\s+", " ", t.replace("*", " ")).strip(" .;:-|'\"")
+
+
+def people(wt, *fields):
+    """Names from the first non-empty of `fields`, split the way the infobox
+    lists them. "writer" is absent on most pre-rock standards, where the credit
+    is split across "composer" and "lyricist" instead, so those are the
+    fallbacks rather than separate columns."""
+    for f in fields:
+        raw = infobox_field(wt, f)
+        if not raw:
+            continue
+        t = re.sub(r"<ref[^>]*/>|<ref.*?</ref>", " ", raw, flags=re.S)
+        t = re.sub(r"\{\{\s*(hlist|flat ?list|ubl|unbulleted list|plain ?list"
+                   r"|bulleted list)\s*\|", "", t, flags=re.I)
+        t = re.sub(r"\[\[([^\[\]|]*)\|([^\[\]]*)\]\]", r"\2", t)
+        t = re.sub(r"\[\[([^\[\]]*)\]\]", r"\1", t)
+        t = re.sub(r"\{\{[^{}]*\}\}", " ", t)
+        t = re.sub(r"<[^>]+>", "|", t)
+        t = t.replace("*", "|").replace("\n", "|")
+        out = []
+        for p in re.split(r"[|;]", t):
+            p = re.sub(r"[\[\]{}]", "", p).strip(" .,;:-")
+            p = re.sub(r"\s+", " ", p)
+            if not p or len(p) > 60 or JUNK.match(p):
+                continue
+            if re.fullmatch(r"(and|or|the|with|feat\.?|featuring)", p, re.I):
+                continue
+            if p.lower() not in [o.lower() for o in out]:
+                out.append(p)
+        if out:
+            return out
+    return []
+
+
+def seconds_of(raw):
+    """Track length in seconds, from "3:48" or {{Duration|m=3|s=48}}."""
+    if not raw:
+        return None
+    m = re.search(r"\{\{\s*duration\s*\|(.*?)\}\}", raw, re.I)
+    if m:
+        d = {k.lower(): int(v) for k, v in
+             re.findall(r"([hms])\s*=\s*(\d+)", m.group(1), re.I)}
+        total = d.get("h", 0) * 3600 + d.get("m", 0) * 60 + d.get("s", 0)
+        if total:
+            return total
+    m = re.search(r"\b(\d{1,2}):([0-5]\d)(?::([0-5]\d))?\b", raw)
+    if m:
+        h, mi, s = m.groups()
+        return (int(h) * 3600 + int(mi) * 60 + int(s)) if s else int(h) * 60 + int(mi)
+    return None
+
+
 def year_of(raw):
     if not raw:
         return None
@@ -161,7 +234,28 @@ def year_of(raw):
 
 
 # ---------------------------------------------------------------- collect links
-song_links, artist_links = {}, {}
+def unlink(t):
+    """[[Page|Shown]] -> Shown, matching parse_wiki3.clean() so the artist text
+    here is the same string that ends up on the performance."""
+    t = re.sub(r"\[\[([^\[\]|]*)\|([^\[\]]*)\]\]", r"\2", t)
+    return re.sub(r"\[\[([^\[\]]*)\]\]", r"\1", t)
+
+
+def artist_text(raw):
+    """The credit as parse_wiki3 records it: unlinked, small-tags dropped, and
+    a trailing parenthetical removed."""
+    t = re.sub(r"\{\{\s*small\s*\|.*?\}\}", " ", raw, flags=re.I | re.S)
+    t = re.sub(r"</?small>", "", t)
+    t = unlink(t).strip().rstrip(".;,")
+    return re.sub(r"\s*\(.*?\)\s*$", "", t).strip()
+
+
+# song_links is keyed on the title alone, which is wrong whenever two different
+# songs share one: "Dreams" is credited to Beck, Fleetwood Mac and The
+# Cranberries on different mornings, and the last write won. The wikitext
+# already disambiguates each of them, so song_pairs keeps the artist in the key
+# and song_links stays only as the fallback for a credit that did not parse.
+song_links, artist_links, song_pairs = {}, {}, {}
 for n in range(1, 8):
     wt = json.load(open(os.path.join(S, f"s{n}.json")))["parse"]["wikitext"]
     for b in re.findall(r"\{\{Episode list(.*?)\n\}\}", wt, flags=re.S):
@@ -169,19 +263,26 @@ for n in range(1, 8):
         if not m:
             continue
         aux = m.group(1)
-        for q in re.finditer(r'"(.*?)"', aux):
-            inner = q.group(1)
-            lm = re.match(r"\s*\[\[([^\[\]|]+)(?:\|([^\[\]]*))?\]\]", inner)
-            if lm:
-                disp = (lm.group(2) or lm.group(1)).strip()
-                song_links[disp.lower()] = lm.group(1)
+        # one pass, so each quoted title keeps the credit that follows it
+        for q in re.finditer(r'"([^"]+)"(\s*by\s+([^/,"]+))?', aux):
+            lm = re.match(r"\s*\[\[([^\[\]|]+)(?:\|([^\[\]]*))?\]\]", q.group(1))
+            if not lm:
+                continue
+            page = lm.group(1)
+            disp = (lm.group(2) or lm.group(1)).strip()
+            song_links[disp.lower()] = page
+            who = artist_text(q.group(3) or "")
+            if who:
+                song_pairs[f"{disp.lower()}\t{who.lower()}"] = page
         tail = aux.split(" by ", 1)
         if len(tail) > 1:
             for am in re.finditer(r"\[\[([^\[\]|]+)(?:\|([^\[\]]*))?\]\]", tail[1]):
                 disp = (am.group(2) or am.group(1)).strip()
                 artist_links[disp.lower()] = am.group(1)
 
-print(f"song articles {len(set(song_links.values()))}, artist articles {len(set(artist_links.values()))}")
+print(f"song articles {len(set(song_links.values()))}, "
+      f"artist articles {len(set(artist_links.values()))}, "
+      f"song+artist pairs {len(song_pairs)}")
 
 cache_p = os.path.join(S, "wiki_meta.json")
 cache = json.load(open(cache_p)) if os.path.exists(cache_p) else {"song": {}, "artist": {}}
@@ -191,11 +292,15 @@ args.add_argument("--refresh", action="store_true",
                   help="re-fetch articles already in the cache")
 args = args.parse_args()
 
+# song_pairs points at articles song_links never named: where two songs share a
+# title, only the last one written ever got fetched.
+all_songs = set(song_links.values()) | set(song_pairs.values())
+
 if args.refresh:
-    want_s = sorted(set(song_links.values()) | set(cache["song"]))
+    want_s = sorted(all_songs | set(cache["song"]))
     want_a = sorted(set(artist_links.values()) | set(cache["artist"]))
 else:
-    want_s = sorted({v for v in song_links.values() if v not in cache["song"]})
+    want_s = sorted({v for v in all_songs if v not in cache["song"]})
     want_a = sorted({v for v in artist_links.values() if v not in cache["artist"]})
     # An article cached before categories were collected has no "cats" key.
     # Pick those up without disturbing anything else already resolved.
@@ -213,6 +318,9 @@ if want_s:
             "genres": genre_list(infobox_field(wt, "genre")),
             "year": year_of(infobox_field(wt, "released")),
             "cats": cats.get(title, []),
+            "writers": people(wt, "writer", "composer", "lyricist"),
+            "album": plain(infobox_field(wt, "album")),
+            "seconds": seconds_of(infobox_field(wt, "length")),
         }
 if want_a:
     print(f"fetching {len(want_a)} artist articles")
@@ -234,6 +342,7 @@ links_p = os.path.join(S, "links.json")
 merged = json.load(open(links_p)) if os.path.exists(links_p) else {}
 merged.setdefault("song_links", {}).update(song_links)
 merged.setdefault("artist_links", {}).update(artist_links)
+merged.setdefault("song_pairs", {}).update(song_pairs)
 kept = len(merged["artist_links"]) - len(artist_links)
 json.dump(merged, open(links_p, "w"), indent=1)
 if kept:

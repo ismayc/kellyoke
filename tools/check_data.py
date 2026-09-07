@@ -24,6 +24,8 @@ CHECKS_RUN = 0
 
 COLUMNS = ["air_date", "season", "episode_overall", "episode_in_season", "song",
            "original_artist", "genre", "original_release_year",
+           "release_year_source", "songwriters", "original_album",
+           "original_seconds",
            "years_since_release", "performed_by", "is_cameo", "duet_with",
            "version_covered", "rerun", "video_id", "video_url", "video_source",
            "video_title", "video_views", "video_seconds"]
