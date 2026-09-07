@@ -12,7 +12,7 @@ description rather than inferred from its title.
 The songs she reached for span **1818 to 2026** across **19 genre families**:
 376 pop, 306 rock, 212 country, 178 R&B and soul, and a long tail down to
 two Latin tracks and a single patriotic one. **Every entry has a genre**, and
-1,198 of 1,245 have an original release year.
+1,200 of 1,245 have an original release year.
 
 ## Files
 
@@ -40,22 +40,32 @@ recording's length, so pairing it with `video_seconds` shows how much of a song
 a Kellyoke actually keeps. `songwriters` falls back to the `composer` and
 `lyricist` fields, which is where pre-rock standards put the credit.
 
-`release_year_source` says where each year came from, because they do not all
-mean quite the same thing:
+`original_release_year` is the year the **song** was first released, by anyone.
+It is not the year of the recording the show credits: "Blues in the Night" is
+credited here to Ella Fitzgerald, who recorded it in 1959, but the song is
+Harold Arlen and Johnny Mercer in 1941, and 1941 is what the column holds.
+`release_year_source` says which source supplied it:
 
-| source | rows | meaning |
+| source | rows | how |
 |---|---|---|
 | `infobox` | 1,001 | the song article's release date |
-| `musicbrainz` | 170 | **the credited artist's recording**, not necessarily the song's first release |
-| `category` | 26 | a "1962 songs" category, so the composition year |
+| `musicbrainz` | 172 | the earliest release across every recording of the song's MusicBrainz work |
+| `category` | 26 | a "1962 songs" category |
 | `credit fix` | 1 | a hand correction where the wikitext named the wrong song |
 
-The `musicbrainz` distinction matters for standards: "Blues in the Night" is
-credited here to Ella Fitzgerald and dated 1961, her recording, though the song
-was written in 1941. Filter on this column if you need one consistent meaning.
+Two limits are worth knowing before leaning on the column. MusicBrainz coverage
+of pre-war material is thin, so "Trouble Blues" dates to 1961 rather than
+Charles Brown's 1949. And a traditional song can date to its earliest
+*recording* rather than its composition: "Oh Come, Oh Come Emmanuel" reads 1975,
+where "Silent Night" has a Wikipedia category to draw on and reads 1818.
 
-`version_covered` records the arrangement she sang when it wasn't the original:
-"Beggin'" is credited to The Four Seasons, but she did the Måneskin version.
+`original_artist` is the artist Kelly was covering, which is **not** always the
+one who released the song first, so it does not have to agree with the year:
+"Silent Night" reads The Temptations against 1818, and "Georgia on My Mind"
+reads Ray Charles against Hoagy Carmichael's 1930. Use `songwriters` for
+authorship, and `version_covered` for the arrangement she sang when it wasn't
+the original: "Beggin'" is credited to The Four Seasons, but she did the
+Måneskin version.
 
 ## Where the data came from
 
