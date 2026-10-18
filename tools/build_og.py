@@ -151,6 +151,7 @@ def main():
         page.write_text(html(), encoding="utf-8")
         shot = Path(tmp) / "shot.png"
         cmd = [chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars",
+               f"--user-data-dir={tmp}/profile",
                f"--force-device-scale-factor={SCALE}",
                f"--window-size={W},{H}",
                # give the webfonts time to arrive before the shutter
